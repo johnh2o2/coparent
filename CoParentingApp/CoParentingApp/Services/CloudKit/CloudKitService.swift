@@ -78,9 +78,19 @@ final class CloudKitService {
 
         switch accountStatus {
         case .available:
-            try await createCustomZoneIfNeeded()
-            currentUserRecordID = try await container.userRecordID()
             isAuthenticated = true
+            // Zone creation is best-effort — the zone may already exist
+            // and various CKError codes can signal that.
+            do {
+                try await createCustomZoneIfNeeded()
+            } catch {
+                print("[CloudKit] Zone creation failed (may already exist): \(error.localizedDescription)")
+            }
+            do {
+                currentUserRecordID = try await container.userRecordID()
+            } catch {
+                print("[CloudKit] Could not fetch user record ID: \(error.localizedDescription)")
+            }
         case .noAccount:
             throw CloudKitError.notAuthenticated
         case .restricted, .couldNotDetermine, .temporarilyUnavailable:
