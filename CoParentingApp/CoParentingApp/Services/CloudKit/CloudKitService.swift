@@ -78,9 +78,9 @@ final class CloudKitService {
 
         switch accountStatus {
         case .available:
-            isAuthenticated = true
             try await createCustomZoneIfNeeded()
             currentUserRecordID = try await container.userRecordID()
+            isAuthenticated = true
         case .noAccount:
             throw CloudKitError.notAuthenticated
         case .restricted, .couldNotDetermine, .temporarilyUnavailable:

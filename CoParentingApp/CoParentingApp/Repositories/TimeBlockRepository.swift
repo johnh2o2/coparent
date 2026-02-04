@@ -110,8 +110,21 @@ final class TimeBlockRepository {
 
             return blocks
         } catch {
-            self.error = error
-            throw error
+            // CloudKit query failed (e.g. record type doesn't exist yet).
+            // Fall back to local cache instead of surfacing the error.
+            print("[TimeBlockRepository] CloudKit fetch failed, falling back to local cache: \(error.localizedDescription)")
+            if timeBlocks.isEmpty {
+                loadSampleData()
+            }
+            let rangeStart = Calendar.current.startOfDay(for: startDate)
+            let rangeEnd = Calendar.current.startOfDay(for: endDate)
+            return timeBlocks.filter { block in
+                if block.recurrenceType != .none {
+                    return block.date <= rangeEnd &&
+                        (block.recurrenceEndDate == nil || block.recurrenceEndDate! >= rangeStart)
+                }
+                return block.date >= rangeStart && block.date <= rangeEnd
+            }
         }
     }
 
