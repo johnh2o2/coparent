@@ -4,6 +4,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab = Tab.calendar
     @State private var messagesViewModel = MessagesViewModel()
+    @State private var showShareAcceptedAlert = false
 
     enum Tab: String, CaseIterable {
         case calendar = "Calendar"
@@ -50,6 +51,14 @@ struct ContentView: View {
         }
         .task {
             await messagesViewModel.loadThreads()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didAcceptCloudKitShare)) { _ in
+            showShareAcceptedAlert = true
+        }
+        .alert("Share Accepted", isPresented: $showShareAcceptedAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("You've been connected to a shared family schedule. Shared data will now sync automatically.")
         }
     }
 }

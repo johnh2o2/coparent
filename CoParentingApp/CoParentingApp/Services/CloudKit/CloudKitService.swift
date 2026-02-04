@@ -1,6 +1,12 @@
 import Foundation
 import CloudKit
 
+// MARK: - Notifications
+
+extension Notification.Name {
+    static let didAcceptCloudKitShare = Notification.Name("didAcceptCloudKitShare")
+}
+
 /// Error types for CloudKit operations
 enum CloudKitError: Error, LocalizedError {
     case notAuthenticated
@@ -59,7 +65,7 @@ final class CloudKitService {
     }
 
     private init() {
-        container = CKContainer(identifier: "iCloud.com.example.CoParentingApp")
+        container = CKContainer(identifier: "iCloud.com.johnhoffman.CoParentingApp")
         privateDatabase = container.privateCloudDatabase
         sharedDatabase = container.sharedCloudDatabase
     }

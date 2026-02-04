@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict/>
+<dict>
+	<key>CKSharingSupported</key>
+	<true/>
+	<key>CFBundleDisplayName</key>
+	<string>Mara-Log-O</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need microphone access for voice commands to modify your schedule.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We use speech recognition to understand your schedule commands.</string>
+</dict>
 </plist>
