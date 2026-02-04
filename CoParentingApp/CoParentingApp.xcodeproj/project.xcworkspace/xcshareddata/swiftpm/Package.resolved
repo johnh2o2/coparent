@@ -1,0 +1,24 @@
+{
+  "originHash" : "e3964dbf78388ac05b7b4b42004b6fa2a4b59ffad59aed8d484aa7d8a153c15b",
+  "pins" : [
+    {
+      "identity" : "kvkcalendar",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kvyatkovskys/KVKCalendar.git",
+      "state" : {
+        "revision" : "330086ba06c747c8ad15d332ef1094e91398af10",
+        "version" : "0.6.30"
+      }
+    },
+    {
+      "identity" : "swiftanthropic",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jamesrochabrun/SwiftAnthropic.git",
+      "state" : {
+        "revision" : "7262ced65e890ea5311193b849786344432d8fa7",
+        "version" : "1.8.6"
+      }
+    }
+  ],
+  "version" : 3
+}

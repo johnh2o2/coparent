@@ -1,0 +1,649 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000010000000000000001 /* CoParentingAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000001 /* CoParentingAppApp.swift */; };
+		A10000010000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000002 /* ContentView.swift */; };
+		A10000010000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000003 /* Assets.xcassets */; };
+		A10000010000000000000004 /* TimeBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000004 /* TimeBlock.swift */; };
+		A10000010000000000000005 /* CareProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000005 /* CareProvider.swift */; };
+		A10000010000000000000006 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000006 /* User.swift */; };
+		A10000010000000000000007 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000007 /* Message.swift */; };
+		A10000010000000000000008 /* DaySchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000008 /* DaySchedule.swift */; };
+		A10000010000000000000009 /* CareLogSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000009 /* CareLogSummary.swift */; };
+		A10000010000000000000010 /* ScheduleChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000010 /* ScheduleChange.swift */; };
+		A10000010000000000000011 /* SlotUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000011 /* SlotUtility.swift */; };
+		A10000010000000000000012 /* KVKCalendarWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000012 /* KVKCalendarWrapper.swift */; };
+		A10000010000000000000013 /* CloudKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000013 /* CloudKitService.swift */; };
+		A10000010000000000000014 /* AIScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000014 /* AIScheduleService.swift */; };
+		A10000010000000000000015 /* VoiceInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000015 /* VoiceInputService.swift */; };
+		A10000010000000000000016 /* TimeBlockRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000016 /* TimeBlockRepository.swift */; };
+		A10000010000000000000017 /* MessageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000017 /* MessageRepository.swift */; };
+		A10000010000000000000018 /* CalendarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000018 /* CalendarViewModel.swift */; };
+		A10000010000000000000019 /* MessagesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000019 /* MessagesViewModel.swift */; };
+		A10000010000000000000020 /* SummaryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000020 /* SummaryViewModel.swift */; };
+		A10000010000000000000021 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000021 /* SettingsViewModel.swift */; };
+		A10000010000000000000022 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000022 /* CalendarView.swift */; };
+		A10000010000000000000023 /* TimeBlockEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000023 /* TimeBlockEditorSheet.swift */; };
+		A10000010000000000000024 /* MessageThreadListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000024 /* MessageThreadListView.swift */; };
+		A10000010000000000000025 /* MessageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000025 /* MessageDetailView.swift */; };
+		A10000010000000000000026 /* CareLogSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000026 /* CareLogSummaryView.swift */; };
+		A10000010000000000000027 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000027 /* SettingsView.swift */; };
+		A10000010000000000000028 /* AIAssistantSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000028 /* AIAssistantSheet.swift */; };
+		A10000010000000000000029 /* ScheduleChangeApprovalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000029 /* ScheduleChangeApprovalView.swift */; };
+		A10000010000000000000030 /* DependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000030 /* DependencyContainer.swift */; };
+		A10000010000000000000031 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000031 /* Extensions.swift */; };
+		A10000010000000000000032 /* KVKCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = A30000010000000000000001 /* KVKCalendar */; };
+		A10000010000000000000033 /* SwiftAnthropic in Frameworks */ = {isa = PBXBuildFile; productRef = A30000010000000000000002 /* SwiftAnthropic */; };
+		A10000010000000000000034 /* ScheduleChangeBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000034 /* ScheduleChangeBatch.swift */; };
+		A10000010000000000000035 /* APIUsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000035 /* APIUsageTracker.swift */; };
+		A10000010000000000000036 /* AIInteractionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000036 /* AIInteractionLog.swift */; };
+		A10000010000000000000037 /* AIHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000037 /* AIHistoryView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000010000000000000000 /* CoParentingApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoParentingApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000010000000000000001 /* CoParentingAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoParentingAppApp.swift; sourceTree = "<group>"; };
+		A20000010000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A20000010000000000000003 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20000010000000000000004 /* TimeBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeBlock.swift; sourceTree = "<group>"; };
+		A20000010000000000000005 /* CareProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareProvider.swift; sourceTree = "<group>"; };
+		A20000010000000000000006 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		A20000010000000000000007 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		A20000010000000000000008 /* DaySchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaySchedule.swift; sourceTree = "<group>"; };
+		A20000010000000000000009 /* CareLogSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareLogSummary.swift; sourceTree = "<group>"; };
+		A20000010000000000000010 /* ScheduleChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleChange.swift; sourceTree = "<group>"; };
+		A20000010000000000000011 /* SlotUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotUtility.swift; sourceTree = "<group>"; };
+		A20000010000000000000012 /* KVKCalendarWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KVKCalendarWrapper.swift; sourceTree = "<group>"; };
+		A20000010000000000000013 /* CloudKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
+		A20000010000000000000014 /* AIScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIScheduleService.swift; sourceTree = "<group>"; };
+		A20000010000000000000015 /* VoiceInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputService.swift; sourceTree = "<group>"; };
+		A20000010000000000000016 /* TimeBlockRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeBlockRepository.swift; sourceTree = "<group>"; };
+		A20000010000000000000017 /* MessageRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRepository.swift; sourceTree = "<group>"; };
+		A20000010000000000000018 /* CalendarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarViewModel.swift; sourceTree = "<group>"; };
+		A20000010000000000000019 /* MessagesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesViewModel.swift; sourceTree = "<group>"; };
+		A20000010000000000000020 /* SummaryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummaryViewModel.swift; sourceTree = "<group>"; };
+		A20000010000000000000021 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		A20000010000000000000022 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		A20000010000000000000023 /* TimeBlockEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeBlockEditorSheet.swift; sourceTree = "<group>"; };
+		A20000010000000000000024 /* MessageThreadListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageThreadListView.swift; sourceTree = "<group>"; };
+		A20000010000000000000025 /* MessageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageDetailView.swift; sourceTree = "<group>"; };
+		A20000010000000000000026 /* CareLogSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareLogSummaryView.swift; sourceTree = "<group>"; };
+		A20000010000000000000027 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A20000010000000000000028 /* AIAssistantSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAssistantSheet.swift; sourceTree = "<group>"; };
+		A20000010000000000000029 /* ScheduleChangeApprovalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleChangeApprovalView.swift; sourceTree = "<group>"; };
+		A20000010000000000000030 /* DependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
+		A20000010000000000000031 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		A20000010000000000000032 /* CoParentingApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CoParentingApp.entitlements; sourceTree = "<group>"; };
+		A20000010000000000000033 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000010000000000000034 /* ScheduleChangeBatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleChangeBatch.swift; sourceTree = "<group>"; };
+		A20000010000000000000035 /* APIUsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIUsageTracker.swift; sourceTree = "<group>"; };
+		A20000010000000000000036 /* AIInteractionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIInteractionLog.swift; sourceTree = "<group>"; };
+		A20000010000000000000037 /* AIHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIHistoryView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A40000010000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000032 /* KVKCalendar in Frameworks */,
+				A10000010000000000000033 /* SwiftAnthropic in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A50000010000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A50000010000000000000002 /* CoParentingApp */,
+				A50000010000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A50000010000000000000002 /* CoParentingApp */ = {
+			isa = PBXGroup;
+			children = (
+				A50000010000000000000004 /* App */,
+				A50000010000000000000005 /* Core */,
+				A50000010000000000000008 /* Services */,
+				A50000010000000000000011 /* Repositories */,
+				A50000010000000000000012 /* ViewModels */,
+				A50000010000000000000013 /* Views */,
+				A50000010000000000000018 /* Resources */,
+			);
+			path = CoParentingApp;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000000 /* CoParentingApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000004 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000001 /* CoParentingAppApp.swift */,
+				A20000010000000000000002 /* ContentView.swift */,
+				A20000010000000000000030 /* DependencyContainer.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000005 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A50000010000000000000006 /* Models */,
+				A50000010000000000000007 /* Utilities */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000006 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000004 /* TimeBlock.swift */,
+				A20000010000000000000005 /* CareProvider.swift */,
+				A20000010000000000000006 /* User.swift */,
+				A20000010000000000000007 /* Message.swift */,
+				A20000010000000000000008 /* DaySchedule.swift */,
+				A20000010000000000000009 /* CareLogSummary.swift */,
+				A20000010000000000000010 /* ScheduleChange.swift */,
+				A20000010000000000000034 /* ScheduleChangeBatch.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000007 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000011 /* SlotUtility.swift */,
+				A20000010000000000000031 /* Extensions.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000008 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A50000010000000000000009 /* CloudKit */,
+				A50000010000000000000010 /* AI */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000009 /* CloudKit */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000013 /* CloudKitService.swift */,
+			);
+			path = CloudKit;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000010 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000014 /* AIScheduleService.swift */,
+				A20000010000000000000036 /* AIInteractionLog.swift */,
+				A20000010000000000000035 /* APIUsageTracker.swift */,
+				A20000010000000000000015 /* VoiceInputService.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000011 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000016 /* TimeBlockRepository.swift */,
+				A20000010000000000000017 /* MessageRepository.swift */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000012 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000018 /* CalendarViewModel.swift */,
+				A20000010000000000000019 /* MessagesViewModel.swift */,
+				A20000010000000000000020 /* SummaryViewModel.swift */,
+				A20000010000000000000021 /* SettingsViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000013 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A50000010000000000000014 /* Calendar */,
+				A50000010000000000000015 /* Messages */,
+				A50000010000000000000016 /* Summary */,
+				A50000010000000000000017 /* Settings */,
+				A50000010000000000000019 /* AI */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000014 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000012 /* KVKCalendarWrapper.swift */,
+				A20000010000000000000022 /* CalendarView.swift */,
+				A20000010000000000000023 /* TimeBlockEditorSheet.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000015 /* Messages */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000024 /* MessageThreadListView.swift */,
+				A20000010000000000000025 /* MessageDetailView.swift */,
+			);
+			path = Messages;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000016 /* Summary */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000026 /* CareLogSummaryView.swift */,
+			);
+			path = Summary;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000017 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000027 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000018 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000003 /* Assets.xcassets */,
+				A20000010000000000000032 /* CoParentingApp.entitlements */,
+				A20000010000000000000033 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000019 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000028 /* AIAssistantSheet.swift */,
+				A20000010000000000000037 /* AIHistoryView.swift */,
+				A20000010000000000000029 /* ScheduleChangeApprovalView.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A60000010000000000000001 /* CoParentingApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A70000010000000000000003 /* Build configuration list for PBXNativeTarget "CoParentingApp" */;
+			buildPhases = (
+				A60000010000000000000002 /* Sources */,
+				A40000010000000000000001 /* Frameworks */,
+				A60000010000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CoParentingApp;
+			packageProductDependencies = (
+				A30000010000000000000001 /* KVKCalendar */,
+				A30000010000000000000002 /* SwiftAnthropic */,
+			);
+			productName = CoParentingApp;
+			productReference = A20000010000000000000000 /* CoParentingApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A80000010000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A60000010000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A70000010000000000000001 /* Build configuration list for PBXProject "CoParentingApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A50000010000000000000001;
+			packageReferences = (
+				A30000010000000000000003 /* XCRemoteSwiftPackageReference "KVKCalendar" */,
+				A30000010000000000000004 /* XCRemoteSwiftPackageReference "SwiftAnthropic" */,
+			);
+			productRefGroup = A50000010000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A60000010000000000000001 /* CoParentingApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A60000010000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000003 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A60000010000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000001 /* CoParentingAppApp.swift in Sources */,
+				A10000010000000000000002 /* ContentView.swift in Sources */,
+				A10000010000000000000004 /* TimeBlock.swift in Sources */,
+				A10000010000000000000005 /* CareProvider.swift in Sources */,
+				A10000010000000000000006 /* User.swift in Sources */,
+				A10000010000000000000007 /* Message.swift in Sources */,
+				A10000010000000000000008 /* DaySchedule.swift in Sources */,
+				A10000010000000000000009 /* CareLogSummary.swift in Sources */,
+				A10000010000000000000010 /* ScheduleChange.swift in Sources */,
+				A10000010000000000000034 /* ScheduleChangeBatch.swift in Sources */,
+				A10000010000000000000011 /* SlotUtility.swift in Sources */,
+				A10000010000000000000012 /* KVKCalendarWrapper.swift in Sources */,
+				A10000010000000000000013 /* CloudKitService.swift in Sources */,
+				A10000010000000000000014 /* AIScheduleService.swift in Sources */,
+				A10000010000000000000035 /* APIUsageTracker.swift in Sources */,
+				A10000010000000000000015 /* VoiceInputService.swift in Sources */,
+				A10000010000000000000016 /* TimeBlockRepository.swift in Sources */,
+				A10000010000000000000017 /* MessageRepository.swift in Sources */,
+				A10000010000000000000018 /* CalendarViewModel.swift in Sources */,
+				A10000010000000000000019 /* MessagesViewModel.swift in Sources */,
+				A10000010000000000000020 /* SummaryViewModel.swift in Sources */,
+				A10000010000000000000021 /* SettingsViewModel.swift in Sources */,
+				A10000010000000000000022 /* CalendarView.swift in Sources */,
+				A10000010000000000000023 /* TimeBlockEditorSheet.swift in Sources */,
+				A10000010000000000000024 /* MessageThreadListView.swift in Sources */,
+				A10000010000000000000025 /* MessageDetailView.swift in Sources */,
+				A10000010000000000000026 /* CareLogSummaryView.swift in Sources */,
+				A10000010000000000000027 /* SettingsView.swift in Sources */,
+				A10000010000000000000028 /* AIAssistantSheet.swift in Sources */,
+				A10000010000000000000029 /* ScheduleChangeApprovalView.swift in Sources */,
+				A10000010000000000000030 /* DependencyContainer.swift in Sources */,
+				A10000010000000000000031 /* Extensions.swift in Sources */,
+				A10000010000000000000036 /* AIInteractionLog.swift in Sources */,
+				A10000010000000000000037 /* AIHistoryView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A70000010000000000000004 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A70000010000000000000005 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A70000010000000000000006 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CoParentingApp/Resources/CoParentingApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DMG3FT2G47;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CoParentingApp/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Mara-Log-O";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need microphone access for voice commands to modify your schedule.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We use speech recognition to understand your schedule commands.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.johnhoffman.CoParentingApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A70000010000000000000007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CoParentingApp/Resources/CoParentingApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DMG3FT2G47;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CoParentingApp/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Mara-Log-O";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need microphone access for voice commands to modify your schedule.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We use speech recognition to understand your schedule commands.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.johnhoffman.CoParentingApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A70000010000000000000001 /* Build configuration list for PBXProject "CoParentingApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000010000000000000004 /* Debug */,
+				A70000010000000000000005 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A70000010000000000000003 /* Build configuration list for PBXNativeTarget "CoParentingApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000010000000000000006 /* Debug */,
+				A70000010000000000000007 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A30000010000000000000003 /* XCRemoteSwiftPackageReference "KVKCalendar" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kvyatkovskys/KVKCalendar.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.6.0;
+			};
+		};
+		A30000010000000000000004 /* XCRemoteSwiftPackageReference "SwiftAnthropic" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jamesrochabrun/SwiftAnthropic.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A30000010000000000000001 /* KVKCalendar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A30000010000000000000003 /* XCRemoteSwiftPackageReference "KVKCalendar" */;
+			productName = KVKCalendar;
+		};
+		A30000010000000000000002 /* SwiftAnthropic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A30000010000000000000004 /* XCRemoteSwiftPackageReference "SwiftAnthropic" */;
+			productName = SwiftAnthropic;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A80000010000000000000001 /* Project object */;
+}
