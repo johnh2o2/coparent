@@ -6,6 +6,8 @@
 	<true/>
 	<key>CFBundleDisplayName</key>
 	<string>Mara-Log-O</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>We use calendar access to display and manage your co-parenting schedule.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need microphone access for voice commands to modify your schedule.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
