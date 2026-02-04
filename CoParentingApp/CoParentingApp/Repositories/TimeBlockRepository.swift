@@ -60,7 +60,7 @@ final class TimeBlockRepository {
             }
         }
 
-        // Fetch both date-range blocks AND recurring blocks whose base date is before range end
+        // CloudKit doesn't support OR compound predicates, so run two queries and merge.
         let dateRangePredicate = NSPredicate(
             format: "date >= %@ AND date <= %@",
             startDate as NSDate,
@@ -71,7 +71,6 @@ final class TimeBlockRepository {
             RecurrenceType.none.rawValue,
             endDate as NSDate
         )
-        let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [dateRangePredicate, recurringPredicate])
 
         let sortDescriptors = [
             NSSortDescriptor(key: "date", ascending: true),
@@ -79,13 +78,28 @@ final class TimeBlockRepository {
         ]
 
         do {
-            let records = try await cloudKit.fetchRecords(
+            async let dateRangeRecords = cloudKit.fetchRecords(
                 recordType: TimeBlock.recordType,
-                predicate: predicate,
+                predicate: dateRangePredicate,
+                sortDescriptors: sortDescriptors
+            )
+            async let recurringRecords = cloudKit.fetchRecords(
+                recordType: TimeBlock.recordType,
+                predicate: recurringPredicate,
                 sortDescriptors: sortDescriptors
             )
 
-            let blocks = records.compactMap { record -> TimeBlock? in
+            // Merge and deduplicate by record ID
+            var seen = Set<String>()
+            var allRecords: [CKRecord] = []
+            for record in try await dateRangeRecords + recurringRecords {
+                let id = record.recordID.recordName
+                if seen.insert(id).inserted {
+                    allRecords.append(record)
+                }
+            }
+
+            let blocks = allRecords.compactMap { record -> TimeBlock? in
                 guard let block = TimeBlock(from: record) else { return nil }
                 recordIDMapping[block.id] = record.recordID
                 return block
