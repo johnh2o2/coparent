@@ -1,6 +1,18 @@
 import Foundation
 import CloudKit
 
+/// Errors specific to time block persistence
+enum TimeBlockError: Error, LocalizedError {
+    case outsideCareWindow
+
+    var errorDescription: String? {
+        switch self {
+        case .outsideCareWindow:
+            return "The time block falls entirely outside the care time window."
+        }
+    }
+}
+
 /// Repository for TimeBlock data operations
 @Observable
 final class TimeBlockRepository {
@@ -111,8 +123,12 @@ final class TimeBlockRepository {
 
     // MARK: - Save Operations
 
-    /// Save a new time block
+    /// Save a new time block (clamped to the care time window)
     func save(_ block: TimeBlock) async throws -> TimeBlock {
+        guard let clamped = block.clampedToCareWindow() else {
+            throw TimeBlockError.outsideCareWindow
+        }
+
         isLoading = true
         error = nil
 
@@ -120,17 +136,17 @@ final class TimeBlockRepository {
 
         // Local-only mode when CloudKit unavailable
         guard cloudKit.isAuthenticated else {
-            if let index = timeBlocks.firstIndex(where: { $0.id == block.id }) {
-                timeBlocks[index] = block
+            if let index = timeBlocks.firstIndex(where: { $0.id == clamped.id }) {
+                timeBlocks[index] = clamped
             } else {
-                timeBlocks.append(block)
+                timeBlocks.append(clamped)
                 timeBlocks.sort { $0.date < $1.date || ($0.date == $1.date && $0.startSlot < $1.startSlot) }
             }
-            return block
+            return clamped
         }
 
         do {
-            let record = block.toRecord(recordID: recordIDMapping[block.id])
+            let record = clamped.toRecord(recordID: recordIDMapping[clamped.id])
             let savedRecord = try await cloudKit.save(record)
 
             if let savedBlock = TimeBlock(from: savedRecord) {
@@ -147,15 +163,17 @@ final class TimeBlockRepository {
                 return savedBlock
             }
 
-            return block
+            return clamped
         } catch {
             self.error = error
             throw error
         }
     }
 
-    /// Save multiple time blocks
+    /// Save multiple time blocks (each clamped to the care time window; blocks entirely outside are dropped)
     func saveAll(_ blocks: [TimeBlock]) async throws -> [TimeBlock] {
+        let clampedBlocks = blocks.compactMap { $0.clampedToCareWindow() }
+
         isLoading = true
         error = nil
 
@@ -163,7 +181,7 @@ final class TimeBlockRepository {
 
         // Local-only mode
         guard cloudKit.isAuthenticated else {
-            for block in blocks {
+            for block in clampedBlocks {
                 if let index = timeBlocks.firstIndex(where: { $0.id == block.id }) {
                     timeBlocks[index] = block
                 } else {
@@ -171,11 +189,11 @@ final class TimeBlockRepository {
                 }
             }
             timeBlocks.sort { $0.date < $1.date || ($0.date == $1.date && $0.startSlot < $1.startSlot) }
-            return blocks
+            return clampedBlocks
         }
 
         do {
-            let records = blocks.map { $0.toRecord(recordID: recordIDMapping[$0.id]) }
+            let records = clampedBlocks.map { $0.toRecord(recordID: recordIDMapping[$0.id]) }
             let savedRecords = try await cloudKit.batchSave(records)
 
             let savedBlocks = savedRecords.compactMap { record -> TimeBlock? in

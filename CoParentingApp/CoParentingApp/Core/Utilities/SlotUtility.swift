@@ -140,6 +140,57 @@ enum SlotUtility {
     /// 9:00 PM
     static let ninePM = 84
 
+    /// 7:00 AM
+    static let sevenAM = 28
+
+    /// 7:30 PM
+    static let sevenThirtyPM = 78
+
     /// End of day (midnight next day)
     static let endOfDay = 96
+
+    // MARK: - Care Time Window
+
+    static let defaultCareWindowStart = 28  // 7:00 AM
+    static let defaultCareWindowEnd = 78    // 7:30 PM
+
+    private static let careWindowStartKey = "careWindowStart"
+    private static let careWindowEndKey = "careWindowEnd"
+
+    /// Current care window start slot (reads from UserDefaults, falls back to default)
+    static var careWindowStart: Int {
+        let stored = UserDefaults.standard.integer(forKey: careWindowStartKey)
+        return stored > 0 ? stored : defaultCareWindowStart
+    }
+
+    /// Current care window end slot (reads from UserDefaults, falls back to default)
+    static var careWindowEnd: Int {
+        let stored = UserDefaults.standard.integer(forKey: careWindowEndKey)
+        return stored > 0 ? stored : defaultCareWindowEnd
+    }
+
+    /// Persist a custom care window
+    static func setCareWindow(start: Int, end: Int) {
+        UserDefaults.standard.set(start, forKey: careWindowStartKey)
+        UserDefaults.standard.set(end, forKey: careWindowEndKey)
+    }
+
+    /// Reset care window to defaults
+    static func resetCareWindow() {
+        UserDefaults.standard.removeObject(forKey: careWindowStartKey)
+        UserDefaults.standard.removeObject(forKey: careWindowEndKey)
+    }
+
+    /// Check if a slot range falls entirely within the care window
+    static func isWithinCareWindow(start: Int, end: Int) -> Bool {
+        start >= careWindowStart && end <= careWindowEnd
+    }
+
+    /// Clamp a slot range to the care window. Returns nil if the range is entirely outside.
+    static func clampToCareWindow(start: Int, end: Int) -> (start: Int, end: Int)? {
+        let clampedStart = max(start, careWindowStart)
+        let clampedEnd = min(end, careWindowEnd)
+        guard clampedStart < clampedEnd else { return nil }
+        return (clampedStart, clampedEnd)
+    }
 }

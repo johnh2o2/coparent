@@ -25,12 +25,16 @@ struct TimeBlockEditorSheet: View {
                 Section("Time") {
                     TimePicker(
                         label: "Start Time",
-                        slot: $block.startSlot
+                        slot: $block.startSlot,
+                        minSlot: SlotUtility.careWindowStart,
+                        maxSlot: SlotUtility.careWindowEnd
                     )
 
                     TimePicker(
                         label: "End Time",
-                        slot: $block.endSlot
+                        slot: $block.endSlot,
+                        minSlot: SlotUtility.careWindowStart,
+                        maxSlot: SlotUtility.careWindowEnd
                     )
 
                     // Duration display
@@ -134,8 +138,10 @@ struct TimeBlockEditorSheet: View {
 struct TimePicker: View {
     let label: String
     @Binding var slot: Int
+    var minSlot: Int = 0
+    var maxSlot: Int = 96
 
-    private let slots = Array(0...96)
+    private var slots: [Int] { Array(minSlot...maxSlot) }
 
     var body: some View {
         Picker(label, selection: $slot) {

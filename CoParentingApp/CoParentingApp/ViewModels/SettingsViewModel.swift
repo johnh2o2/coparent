@@ -24,6 +24,8 @@ final class SettingsViewModel {
     // Settings
     var notificationsEnabled = true
     var defaultCalendarView: String = "week"
+    var careWindowStart: Int = SlotUtility.defaultCareWindowStart
+    var careWindowEnd: Int = SlotUtility.defaultCareWindowEnd
     var providerNames: [CareProvider: String] = [
         .parentA: "Parent A",
         .parentB: "Parent B",
@@ -190,6 +192,25 @@ final class SettingsViewModel {
         UserDefaults.standard.set(stringKeyed, forKey: "providerNames")
     }
 
+    /// Update care window start slot
+    func setCareWindowStart(_ slot: Int) {
+        careWindowStart = slot
+        SlotUtility.setCareWindow(start: slot, end: careWindowEnd)
+    }
+
+    /// Update care window end slot
+    func setCareWindowEnd(_ slot: Int) {
+        careWindowEnd = slot
+        SlotUtility.setCareWindow(start: careWindowStart, end: slot)
+    }
+
+    /// Reset care window to defaults
+    func resetCareWindow() {
+        SlotUtility.resetCareWindow()
+        careWindowStart = SlotUtility.defaultCareWindowStart
+        careWindowEnd = SlotUtility.defaultCareWindowEnd
+    }
+
     /// Save or clear the Anthropic API key
     func saveAnthropicAPIKey() {
         let trimmed = anthropicAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -204,6 +225,8 @@ final class SettingsViewModel {
     func loadSettings() {
         notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
         defaultCalendarView = UserDefaults.standard.string(forKey: "defaultCalendarView") ?? "week"
+        careWindowStart = SlotUtility.careWindowStart
+        careWindowEnd = SlotUtility.careWindowEnd
 
         if let savedNames = UserDefaults.standard.dictionary(forKey: "providerNames") as? [String: String] {
             for (key, value) in savedNames {

@@ -190,6 +190,44 @@ struct SettingsView: View {
                     Text("Calendar")
                 }
 
+                // Care Time Window section
+                Section {
+                    Picker("Earliest Start", selection: Binding(
+                        get: { viewModel.careWindowStart },
+                        set: { viewModel.setCareWindowStart($0) }
+                    )) {
+                        // 5:00 AM (slot 20) to 12:00 PM (slot 48)
+                        ForEach(Array(stride(from: 20, through: 48, by: 1)), id: \.self) { slot in
+                            Text(SlotUtility.formatSlot(slot)).tag(slot)
+                        }
+                    }
+
+                    Picker("Latest End", selection: Binding(
+                        get: { viewModel.careWindowEnd },
+                        set: { viewModel.setCareWindowEnd($0) }
+                    )) {
+                        // 4:00 PM (slot 64) to 11:00 PM (slot 92)
+                        ForEach(Array(stride(from: 64, through: 92, by: 1)), id: \.self) { slot in
+                            Text(SlotUtility.formatSlot(slot)).tag(slot)
+                        }
+                    }
+
+                    HStack {
+                        Text("Current Window")
+                        Spacer()
+                        Text("\(SlotUtility.formatSlot(viewModel.careWindowStart)) – \(SlotUtility.formatSlot(viewModel.careWindowEnd))")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Button("Reset to Default") {
+                        viewModel.resetCareWindow()
+                    }
+                } header: {
+                    Text("Care Time Window")
+                } footer: {
+                    Text("Blocks outside this window are treated as sleep/personal time and won't be scheduled.")
+                }
+
                 // About section
                 Section {
                     HStack {

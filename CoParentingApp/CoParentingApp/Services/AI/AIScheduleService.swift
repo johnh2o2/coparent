@@ -132,6 +132,9 @@ final class AIScheduleService {
         - Slot 96 = midnight (end of day)
         Formula: slot = hour * 4 + (minute / 15)
 
+        CARE TIME WINDOW: All blocks MUST have start_slot >= \(SlotUtility.careWindowStart) and end_slot <= \(SlotUtility.careWindowEnd).
+        Never create blocks outside this window (\(SlotUtility.formatSlot(SlotUtility.careWindowStart)) - \(SlotUtility.formatSlot(SlotUtility.careWindowEnd))). Time outside the window is sleep/personal time and must not be scheduled.
+
         Providers: parent_a, parent_b, nanny
 
         Current schedule:

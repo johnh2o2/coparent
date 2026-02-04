@@ -81,6 +81,31 @@ struct TimeBlock: Identifiable, Codable, Equatable {
         slot >= startSlot && slot < endSlot
     }
 
+    /// Whether this block falls entirely within the configured care time window
+    var isWithinCareWindow: Bool {
+        SlotUtility.isWithinCareWindow(start: startSlot, end: endSlot)
+    }
+
+    /// Returns a copy clamped to the care window, or nil if entirely outside
+    func clampedToCareWindow() -> TimeBlock? {
+        guard let clamped = SlotUtility.clampToCareWindow(start: startSlot, end: endSlot) else {
+            return nil
+        }
+        if clamped.start == startSlot && clamped.end == endSlot { return self }
+        return TimeBlock(
+            id: id,
+            date: date,
+            startSlot: clamped.start,
+            endSlot: clamped.end,
+            provider: provider,
+            notes: notes,
+            recurrenceType: recurrenceType,
+            recurrenceEndDate: recurrenceEndDate,
+            createdAt: createdAt,
+            modifiedAt: Date()
+        )
+    }
+
     /// Check if this recurring block should appear on the given target date
     func matchesRecurrence(on targetDate: Date) -> Bool {
         guard recurrenceType != .none else { return false }
@@ -189,27 +214,32 @@ extension TimeBlock {
             : nil
         let recurrence: RecurrenceType = recurring ? .everyWeek : .none
 
+        let windowStart = SlotUtility.careWindowStart
+        let windowEnd = SlotUtility.careWindowEnd
+        let midpoint = (windowStart + windowEnd) / 2
+        let threeQuarter = midpoint + (windowEnd - midpoint) / 2
+
         return [
             TimeBlock(
                 date: date,
-                startSlot: 32,  // 8:00 AM
-                endSlot: 48,    // 12:00 PM
+                startSlot: windowStart,
+                endSlot: midpoint,
                 provider: .parentA,
                 recurrenceType: recurrence,
                 recurrenceEndDate: endDate
             ),
             TimeBlock(
                 date: date,
-                startSlot: 48,  // 12:00 PM
-                endSlot: 72,    // 6:00 PM
+                startSlot: midpoint,
+                endSlot: threeQuarter,
                 provider: .nanny,
                 recurrenceType: recurrence,
                 recurrenceEndDate: endDate
             ),
             TimeBlock(
                 date: date,
-                startSlot: 72,  // 6:00 PM
-                endSlot: 84,    // 9:00 PM
+                startSlot: threeQuarter,
+                endSlot: windowEnd,
                 provider: .parentB,
                 recurrenceType: recurrence,
                 recurrenceEndDate: endDate
