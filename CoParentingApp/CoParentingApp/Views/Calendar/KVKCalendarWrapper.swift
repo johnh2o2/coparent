@@ -113,9 +113,9 @@ struct KVKCalendarWrapper: UIViewControllerRepresentable {
         func dequeueMonthViewEvents(_ events: [Event], date: Date, frame: CGRect) -> UIView? {
             guard !events.isEmpty else { return nil }
 
-            // Calculate hours per provider from the TimeBlock data
-            let calendar = Calendar.current
-            let dayBlocks = self.events.filter { calendar.isDate($0.date, inSameDayAs: date) }
+            // Look up TimeBlocks by matching the KVK event IDs back to our data
+            let eventIDs = Set(events.compactMap { $0.data as? String })
+            let dayBlocks = self.events.filter { eventIDs.contains($0.id.uuidString) }
             guard !dayBlocks.isEmpty else { return nil }
 
             var hoursByProvider: [CareProvider: Double] = [:]
@@ -134,24 +134,18 @@ struct KVKCalendarWrapper: UIViewControllerRepresentable {
             container.clipsToBounds = true
 
             // Background tint based on user's care hours (more hours = more intense)
-            // Max expected hours per day ~12.5h, so normalize to that
-            let intensity = min(userHours / 12.5, 1.0)
+            let maxDayHours = max(totalHours, 1.0)
+            let intensity = min(userHours / maxDayHours, 1.0)
             if intensity > 0 {
                 container.backgroundColor = userProvider.uiColor.withAlphaComponent(CGFloat(intensity) * 0.25)
             }
 
-            // Show total hours label
+            // Show user's care hours for this day
             let label = UILabel()
             label.font = .systemFont(ofSize: 11, weight: .semibold)
             label.textAlignment = .center
-
-            if hoursByProvider.count == 1, let (provider, hours) = hoursByProvider.first {
-                label.text = String(format: "%.1fh", hours)
-                label.textColor = provider.uiColor
-            } else {
-                label.text = String(format: "%.1fh", totalHours)
-                label.textColor = userProvider.uiColor
-            }
+            label.text = String(format: "%.1fh", userHours)
+            label.textColor = userProvider.uiColor
 
             label.translatesAutoresizingMaskIntoConstraints = false
             container.addSubview(label)
@@ -160,7 +154,7 @@ struct KVKCalendarWrapper: UIViewControllerRepresentable {
                 label.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
             ])
 
-            // Show provider color dots below hours if multiple providers
+            // Show provider color dots below hours
             if hoursByProvider.count > 1 {
                 let dotStack = UIStackView()
                 dotStack.axis = .horizontal
