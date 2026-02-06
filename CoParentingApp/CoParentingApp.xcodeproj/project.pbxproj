@@ -44,6 +44,14 @@
 		A10000010000000000000035 /* APIUsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000035 /* APIUsageTracker.swift */; };
 		A10000010000000000000036 /* AIInteractionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000036 /* AIInteractionLog.swift */; };
 		A10000010000000000000037 /* AIHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000037 /* AIHistoryView.swift */; };
+		A10000010000000000000038 /* ScheduleChangeEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000038 /* ScheduleChangeEntry.swift */; };
+		A10000010000000000000039 /* ScheduleChangeRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000039 /* ScheduleChangeRepository.swift */; };
+		A10000010000000000000040 /* ActivityJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000040 /* ActivityJournalView.swift */; };
+		A10000010000000000000041 /* ActivityDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000041 /* ActivityDetailView.swift */; };
+		A10000010000000000000042 /* ActivityRawView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000042 /* ActivityRawView.swift */; };
+		A10000010000000000000043 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000043 /* DashboardViewModel.swift */; };
+		A10000010000000000000044 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000044 /* DashboardView.swift */; };
+		A10000010000000000000045 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000045 /* Haptics.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -85,6 +93,14 @@
 		A20000010000000000000035 /* APIUsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIUsageTracker.swift; sourceTree = "<group>"; };
 		A20000010000000000000036 /* AIInteractionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIInteractionLog.swift; sourceTree = "<group>"; };
 		A20000010000000000000037 /* AIHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIHistoryView.swift; sourceTree = "<group>"; };
+		A20000010000000000000038 /* ScheduleChangeEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleChangeEntry.swift; sourceTree = "<group>"; };
+		A20000010000000000000039 /* ScheduleChangeRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleChangeRepository.swift; sourceTree = "<group>"; };
+		A20000010000000000000040 /* ActivityJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityJournalView.swift; sourceTree = "<group>"; };
+		A20000010000000000000041 /* ActivityDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDetailView.swift; sourceTree = "<group>"; };
+		A20000010000000000000042 /* ActivityRawView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityRawView.swift; sourceTree = "<group>"; };
+		A20000010000000000000043 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
+		A20000010000000000000044 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		A20000010000000000000045 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,6 +176,7 @@
 				A20000010000000000000009 /* CareLogSummary.swift */,
 				A20000010000000000000010 /* ScheduleChange.swift */,
 				A20000010000000000000034 /* ScheduleChangeBatch.swift */,
+				A20000010000000000000038 /* ScheduleChangeEntry.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -169,6 +186,7 @@
 			children = (
 				A20000010000000000000011 /* SlotUtility.swift */,
 				A20000010000000000000031 /* Extensions.swift */,
+				A20000010000000000000045 /* Haptics.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -206,6 +224,7 @@
 			children = (
 				A20000010000000000000016 /* TimeBlockRepository.swift */,
 				A20000010000000000000017 /* MessageRepository.swift */,
+				A20000010000000000000039 /* ScheduleChangeRepository.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -217,6 +236,7 @@
 				A20000010000000000000019 /* MessagesViewModel.swift */,
 				A20000010000000000000020 /* SummaryViewModel.swift */,
 				A20000010000000000000021 /* SettingsViewModel.swift */,
+				A20000010000000000000043 /* DashboardViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -224,13 +244,33 @@
 		A50000010000000000000013 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A50000010000000000000021 /* Dashboard */,
 				A50000010000000000000014 /* Calendar */,
 				A50000010000000000000015 /* Messages */,
+				A50000010000000000000020 /* Activity */,
 				A50000010000000000000016 /* Summary */,
 				A50000010000000000000017 /* Settings */,
 				A50000010000000000000019 /* AI */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000021 /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000044 /* DashboardView.swift */,
+			);
+			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000020 /* Activity */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000040 /* ActivityJournalView.swift */,
+				A20000010000000000000041 /* ActivityDetailView.swift */,
+				A20000010000000000000042 /* ActivityRawView.swift */,
+			);
+			path = Activity;
 			sourceTree = "<group>";
 		};
 		A50000010000000000000014 /* Calendar */ = {
@@ -399,6 +439,14 @@
 				A10000010000000000000031 /* Extensions.swift in Sources */,
 				A10000010000000000000036 /* AIInteractionLog.swift in Sources */,
 				A10000010000000000000037 /* AIHistoryView.swift in Sources */,
+				A10000010000000000000038 /* ScheduleChangeEntry.swift in Sources */,
+				A10000010000000000000039 /* ScheduleChangeRepository.swift in Sources */,
+				A10000010000000000000040 /* ActivityJournalView.swift in Sources */,
+				A10000010000000000000041 /* ActivityDetailView.swift in Sources */,
+				A10000010000000000000042 /* ActivityRawView.swift in Sources */,
+				A10000010000000000000043 /* DashboardViewModel.swift in Sources */,
+				A10000010000000000000044 /* DashboardView.swift in Sources */,
+				A10000010000000000000045 /* Haptics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -532,7 +580,7 @@
 				CODE_SIGN_ENTITLEMENTS = CoParentingApp/Resources/CoParentingApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = DMG3FT2G47;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -568,7 +616,7 @@
 				CODE_SIGN_ENTITLEMENTS = CoParentingApp/Resources/CoParentingApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = DMG3FT2G47;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

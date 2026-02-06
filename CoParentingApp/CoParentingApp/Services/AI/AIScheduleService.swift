@@ -50,7 +50,7 @@ final class AIScheduleService {
     // MARK: - Schedule Command Parsing
 
     /// Parse a natural language schedule command, returning a batch of changes.
-    func parseScheduleCommand(_ command: String, currentBlocks: [TimeBlock]) async throws -> ScheduleChangeBatch {
+    func parseScheduleCommand(_ command: String, currentBlocks: [TimeBlock], currentUser: User? = nil) async throws -> ScheduleChangeBatch {
         // If not yet configured, check if a key was saved by another instance (e.g. Settings)
         if service == nil, let savedKey = Self.savedAPIKey {
             configure(with: savedKey)
@@ -63,7 +63,7 @@ final class AIScheduleService {
         isProcessing = true
         defer { isProcessing = false }
 
-        let systemPrompt = buildSystemPrompt(blocks: currentBlocks)
+        let systemPrompt = buildSystemPrompt(blocks: currentBlocks, currentUser: currentUser)
         let tools = buildTools()
 
         do {
@@ -105,9 +105,88 @@ final class AIScheduleService {
         }
     }
 
+    // MARK: - Activity Metadata Generation
+
+    /// Metadata extracted from a single AI call for activity journal entries.
+    struct ActivityMetadata: Codable {
+        let title: String           // Short label, e.g. "Set default schedule"
+        let purpose: String?        // Why the change was made
+        let datesImpacted: String   // e.g. "Mon–Fri recurring, starting Feb 10"
+        let careTimeDelta: String?  // e.g. "+12.5h Parent A, +10h Parent B weekly"
+        let notificationMessage: String // Warm coparent notification
+    }
+
+    /// Generate all activity metadata in a single AI call.
+    func generateActivityMetadata(narration: String, summary: String, changeCount: Int, userName: String) async -> ActivityMetadata {
+        let fallback = ActivityMetadata(
+            title: "\(changeCount) schedule change\(changeCount == 1 ? "" : "s")",
+            purpose: nil,
+            datesImpacted: "Today",
+            careTimeDelta: nil,
+            notificationMessage: "\(userName) made \(changeCount) schedule change\(changeCount == 1 ? "" : "s")."
+        )
+
+        guard let service = service else { return fallback }
+
+        let systemPrompt = """
+        You extract structured metadata about a schedule change. Respond with ONLY valid JSON, no markdown fences, no commentary.
+        Use display names (e.g. "Parent A", "Parent B", "Nanny"). Never use internal identifiers like "parent_a".
+        Do not use markdown formatting anywhere in the values — plain text only.
+
+        Return this exact JSON shape:
+        {
+          "title": "short 3-6 word label for the change",
+          "purpose": "one sentence explaining why this change was made, or null if unclear",
+          "datesImpacted": "concise description of affected dates, e.g. Mon–Fri recurring starting Feb 10",
+          "careTimeDelta": "net care time change per parent, e.g. +12.5h Parent A weekly, or null if unclear",
+          "notificationMessage": "warm 1-2 sentence note for the other coparent about what changed"
+        }
+        """
+
+        let userMessage = """
+        The user "\(userName)" said: "\(narration)"
+
+        The AI made these changes: \(summary)
+        Total changes: \(changeCount)
+        """
+
+        do {
+            let message = MessageParameter.Message(role: .user, content: .text(userMessage))
+            let parameter = MessageParameter(
+                model: .other("claude-sonnet-4-5-20250929"),
+                messages: [message],
+                maxTokens: 512,
+                system: .text(systemPrompt)
+            )
+
+            let response = try await service.createMessage(parameter)
+
+            APIUsageTracker.shared.record(
+                inputTokens: response.usage.inputTokens ?? 0,
+                outputTokens: response.usage.outputTokens,
+                cacheCreationTokens: response.usage.cacheCreationInputTokens ?? 0,
+                cacheReadTokens: response.usage.cacheReadInputTokens ?? 0
+            )
+
+            for content in response.content {
+                if case .text(let text) = content {
+                    let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let data = cleaned.data(using: .utf8),
+                       let metadata = try? JSONDecoder().decode(ActivityMetadata.self, from: data) {
+                        return metadata
+                    }
+                }
+            }
+        } catch {
+            print("[AIScheduleService] Metadata generation failed: \(error.localizedDescription)")
+        }
+
+        return fallback
+    }
+
     // MARK: - System Prompt
 
-    private func buildSystemPrompt(blocks: [TimeBlock]) -> String {
+    private func buildSystemPrompt(blocks: [TimeBlock], currentUser: User? = nil) -> String {
         let today = Date()
         let formatter = DateFormatter()
         formatter.dateStyle = .full
@@ -136,7 +215,7 @@ final class AIScheduleService {
         Never create blocks outside this window (\(SlotUtility.formatSlot(SlotUtility.careWindowStart)) - \(SlotUtility.formatSlot(SlotUtility.careWindowEnd))). Time outside the window is sleep/personal time and must not be scheduled.
 
         Providers: parent_a, parent_b, nanny
-
+        \(Self.userIdentityPrompt(currentUser))
         Current schedule:
         """
 
@@ -157,7 +236,7 @@ final class AIScheduleService {
                 for block in byWeekday[weekday]!.sorted(by: { $0.startSlot < $1.startSlot }) {
                     let startTime = SlotUtility.formatSlot(block.startSlot)
                     let endTime = SlotUtility.formatSlot(block.endSlot)
-                    prompt += "\n    - \(block.provider.displayName) [\(block.provider.rawValue)]: \(startTime) - \(endTime) (slots \(block.startSlot)-\(block.endSlot)) [RECURRING WEEKLY]"
+                    prompt += "\n    - \(block.provider.displayName) (\(block.provider.rawValue)): \(startTime) - \(endTime) (slots \(block.startSlot)-\(block.endSlot)) [RECURRING WEEKLY]"
                 }
             }
         }
@@ -176,7 +255,7 @@ final class AIScheduleService {
                 for block in groupedBlocks[date]!.sorted(by: { $0.startSlot < $1.startSlot }) {
                     let startTime = SlotUtility.formatSlot(block.startSlot)
                     let endTime = SlotUtility.formatSlot(block.endSlot)
-                    prompt += "\n  - \(block.provider.displayName) [\(block.provider.rawValue)]: \(startTime) - \(endTime) (slots \(block.startSlot)-\(block.endSlot))"
+                    prompt += "\n  - \(block.provider.displayName) (\(block.provider.rawValue)): \(startTime) - \(endTime) (slots \(block.startSlot)-\(block.endSlot))"
                     if let notes = block.notes {
                         prompt += " (\(notes))"
                     }
@@ -680,6 +759,20 @@ final class AIScheduleService {
         default:
             throw AIServiceError.unknownTool(toolUse.name)
         }
+    }
+
+    // MARK: - User Identity
+
+    private static func userIdentityPrompt(_ user: User?) -> String {
+        guard let user = user else { return "" }
+        let firstName = user.displayName.components(separatedBy: " ").first ?? user.displayName
+        return """
+
+        The user speaking to you is \(user.displayName) (role: \(user.role.displayName)).
+        When the user says "I" or "my", they mean \(firstName) (\(user.role.displayName)).
+        Address them by their first name (\(firstName)) in your responses.
+        In responses, use display names only (e.g. "Parent A"). Never use internal identifiers like "parent_a". Do not use markdown formatting.
+        """
     }
 
     // MARK: - Recurrence Helpers

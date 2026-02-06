@@ -3,20 +3,22 @@ import SwiftUI
 /// Main content view with tab navigation
 struct ContentView: View {
     @Environment(\.dependencies) private var dependencies
-    @State private var selectedTab = Tab.calendar
-    @State private var messagesViewModel: MessagesViewModel?
+    @State private var selectedTab = Tab.home
     @State private var showShareAcceptedAlert = false
+    @State private var showIdentityPrompt = false
 
     enum Tab: String, CaseIterable {
+        case home = "Home"
         case calendar = "Calendar"
-        case messages = "Messages"
+        case activity = "Activity"
         case summary = "Summary"
         case settings = "Settings"
 
         var iconName: String {
             switch self {
+            case .home: return "house.fill"
             case .calendar: return "calendar"
-            case .messages: return "message"
+            case .activity: return "clock.arrow.circlepath"
             case .summary: return "chart.pie"
             case .settings: return "gear"
             }
@@ -25,18 +27,23 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
+            DashboardView()
+                .tabItem {
+                    Label(Tab.home.rawValue, systemImage: Tab.home.iconName)
+                }
+                .tag(Tab.home)
+
             CalendarView()
                 .tabItem {
                     Label(Tab.calendar.rawValue, systemImage: Tab.calendar.iconName)
                 }
                 .tag(Tab.calendar)
 
-            MessageThreadListView()
+            ActivityJournalView()
                 .tabItem {
-                    Label(Tab.messages.rawValue, systemImage: Tab.messages.iconName)
+                    Label(Tab.activity.rawValue, systemImage: Tab.activity.iconName)
                 }
-                .tag(Tab.messages)
-                .badge(messagesViewModel?.totalUnreadCount ?? 0)
+                .tag(Tab.activity)
 
             CareLogSummaryView()
                 .tabItem {
@@ -50,11 +57,16 @@ struct ContentView: View {
                 }
                 .tag(Tab.settings)
         }
-        .task {
-            if messagesViewModel == nil {
-                messagesViewModel = dependencies.makeMessagesViewModel()
+        .onAppear {
+            if !User.hasLocalIdentity {
+                showIdentityPrompt = true
             }
-            await messagesViewModel?.loadThreads()
+        }
+        .sheet(isPresented: $showIdentityPrompt) {
+            ProfileEditorSheet(currentUser: nil, isRequired: true) { name, role in
+                let user = User(displayName: name, role: role)
+                user.saveLocally()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didAcceptCloudKitShare)) { _ in
             showShareAcceptedAlert = true

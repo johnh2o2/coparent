@@ -259,7 +259,7 @@ final class CalendarViewModel {
         errorMessage = nil
 
         do {
-            let batch = try await aiService.parseScheduleCommand(command, currentBlocks: timeBlocks)
+            let batch = try await aiService.parseScheduleCommand(command, currentBlocks: timeBlocks, currentUser: User.loadLocal())
             pendingBatches.append(batch)
             isLoading = false
             return batch
@@ -294,11 +294,44 @@ final class CalendarViewModel {
 
             // Remove from pending
             pendingBatches.removeAll { $0.id == batch.id }
+
+            // Log to activity journal
+            await logActivityEntry(for: batch)
         } catch {
             errorMessage = error.localizedDescription
         }
 
         isLoading = false
+    }
+
+    /// Log an activity journal entry after a batch is applied.
+    private func logActivityEntry(for batch: ScheduleChangeBatch) async {
+        guard let user = User.loadLocal() else { return }
+
+        // Generate all metadata in a single AI call
+        let metadata = await aiService.generateActivityMetadata(
+            narration: batch.originalCommand,
+            summary: batch.summary,
+            changeCount: batch.changeCount,
+            userName: user.displayName
+        )
+
+        let entry = ScheduleChangeEntry(
+            userID: user.id,
+            userName: user.displayName,
+            userRole: user.asCareProvider.rawValue,
+            changeDescription: metadata.notificationMessage,
+            userNarration: batch.originalCommand,
+            notificationMessage: metadata.notificationMessage,
+            changesApplied: batch.changeCount,
+            title: metadata.title,
+            purpose: metadata.purpose,
+            datesImpacted: metadata.datesImpacted,
+            careTimeDelta: metadata.careTimeDelta,
+            rawAISummary: batch.summary
+        )
+
+        await ScheduleChangeRepository.shared.save(entry)
     }
 
     /// Reject a pending batch.

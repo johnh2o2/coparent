@@ -58,13 +58,13 @@ struct AIAssistantSheet: View {
             VStack(spacing: 8) {
                 Image(systemName: "wand.and.stars")
                     .font(.system(size: 48))
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(Color.accentColor)
 
                 Text("Schedule Assistant")
                     .font(.title2)
                     .fontWeight(.semibold)
 
-                Text("Tell me what you'd like to change")
+                Text(aiGreeting)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -135,7 +135,7 @@ struct AIAssistantSheet: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(canSubmit ? .purple : .gray)
+                .background(canSubmit ? Color.accentColor : .gray)
                 .foregroundStyle(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
@@ -187,7 +187,7 @@ struct AIAssistantSheet: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "wand.and.stars")
                                     .font(.title2)
-                                    .foregroundStyle(.purple)
+                                    .foregroundStyle(Color.accentColor)
 
                                 Text("Schedule Assistant")
                                     .font(.headline)
@@ -343,7 +343,7 @@ struct AIAssistantSheet: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(.purple)
+                .background(Color.accentColor)
                 .foregroundStyle(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
@@ -354,12 +354,26 @@ struct AIAssistantSheet: View {
 
     // MARK: - Helpers
 
+    private var aiGreeting: String {
+        if let user = User.loadLocal() {
+            let firstName = user.displayName.components(separatedBy: " ").first ?? user.displayName
+            return "Tell me what you'd like to change, \(firstName)"
+        }
+        return "Tell me what you'd like to change"
+    }
+
     private var canSubmit: Bool {
         !textInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         !voiceService.transcribedText.isEmpty
     }
 
     private func submitCommand() {
+        guard User.hasLocalIdentity else {
+            errorText = "Please set up your profile in Settings before using the AI assistant."
+            sheetState = .error
+            return
+        }
+
         let command = textInput.isEmpty ? voiceService.transcribedText : textInput
         guard !command.isEmpty else { return }
 
@@ -408,6 +422,7 @@ struct AIAssistantSheet: View {
                     changeCount: batch.changeCount,
                     wasApplied: true
                 )
+                Haptics.success()
                 sheetState = .done
                 // Auto-dismiss after 1.5 seconds
                 try? await Task.sleep(for: .seconds(1.5))
@@ -511,8 +526,15 @@ struct ChangeRow: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
-        .background(Color(.systemGray6))
+        .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var rowBackground: Color {
+        if let block = change.proposedBlock ?? change.originalBlock {
+            return block.provider.lightColor
+        }
+        return Color(.systemGray6)
     }
 
     private var changeIndicator: String {
@@ -549,7 +571,7 @@ struct VoiceInputButton: View {
                     // Pulsing background when recording
                     if isRecording {
                         Circle()
-                            .fill(.purple.opacity(0.3))
+                            .fill(Color.accentColor.opacity(0.3))
                             .frame(width: 120, height: 120)
                             .scaleEffect(animationAmount)
                             .opacity(2 - animationAmount)
@@ -561,7 +583,7 @@ struct VoiceInputButton: View {
                     }
 
                     Circle()
-                        .fill(isRecording ? .red : .purple)
+                        .fill(isRecording ? .red : Color.accentColor)
                         .frame(width: 80, height: 80)
 
                     Image(systemName: isRecording ? "stop.fill" : "mic.fill")
@@ -611,7 +633,7 @@ struct ExamplesSection: View {
             ForEach(examples, id: \.self) { example in
                 HStack {
                     Image(systemName: "text.bubble")
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(Color.accentColor)
                     Text(example)
                         .font(.callout)
                 }
