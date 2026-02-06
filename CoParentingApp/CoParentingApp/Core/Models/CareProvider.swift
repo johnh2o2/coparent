@@ -10,11 +10,11 @@ enum CareProvider: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Default display name for the provider
+    /// Default display name for the provider (used only before names are configured)
     var defaultDisplayName: String {
         switch self {
-        case .parentA: return "Parent A"
-        case .parentB: return "Parent B"
+        case .parentA: return "Caregiver 1"
+        case .parentB: return "Caregiver 2"
         case .nanny: return "Nanny"
         case .none: return "Unassigned"
         }
@@ -33,11 +33,25 @@ enum CareProvider: String, Codable, CaseIterable, Identifiable {
     /// Color used to display this provider's time blocks
     var color: Color {
         switch self {
-        case .parentA: return Color(red: 0.302, green: 0.478, blue: 0.820) // Blue
-        case .parentB: return Color(red: 0.820, green: 0.478, blue: 0.302) // Orange
-        case .nanny: return Color(red: 0.478, green: 0.720, blue: 0.478) // Green
+        case .parentA: return Color(red: 0.35, green: 0.34, blue: 0.84)  // Soft indigo — twilight sky
+        case .parentB: return Color(red: 0.90, green: 0.58, blue: 0.22)  // Warm amber — sunlit earth
+        case .nanny: return Color(red: 0.42, green: 0.68, blue: 0.57)    // Soft sage — foliage
         case .none: return Color.gray.opacity(0.3)
         }
+    }
+
+    /// Light tint for card backgrounds and row highlights (12% opacity)
+    var lightColor: Color {
+        color.opacity(0.12)
+    }
+
+    /// Subtle vertical gradient for event fills and profile avatars
+    var gradient: LinearGradient {
+        LinearGradient(
+            colors: [color.opacity(0.7), color],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 
     /// UIColor version for UIKit integration

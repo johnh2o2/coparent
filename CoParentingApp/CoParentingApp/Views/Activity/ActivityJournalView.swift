@@ -129,15 +129,24 @@ private struct ActivityEntryCard: View {
                 .font(.caption)
                 .foregroundStyle(Color.accentColor)
 
-            // Title
-            Text(entry.title)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .lineLimit(1)
+            // Title + impact
+            VStack(alignment: .leading, spacing: 3) {
+                Text(entry.title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+
+                if let delta = entry.careTimeDelta, !delta.isEmpty {
+                    Text(delta)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
 
             Spacer()
 
-            // Right side: user name + timestamp + chevron
+            // Right side: user name + timestamp
             VStack(alignment: .trailing, spacing: 2) {
                 Text(entry.userName)
                     .font(.caption2)
@@ -146,17 +155,6 @@ private struct ActivityEntryCard: View {
                 Text(relativeTime)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
-            }
-
-            // Changes count pill
-            if entry.changesApplied > 0 {
-                Text("\(entry.changesApplied)")
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .frame(width: 22, height: 22)
-                    .background(entry.provider.color.opacity(0.8))
-                    .clipShape(Circle())
             }
 
             Image(systemName: "chevron.right")

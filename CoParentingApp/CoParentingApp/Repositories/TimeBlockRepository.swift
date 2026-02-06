@@ -141,7 +141,9 @@ final class TimeBlockRepository {
 
     /// Save a new time block (clamped to the care time window)
     func save(_ block: TimeBlock) async throws -> TimeBlock {
-        guard let clamped = block.clampedToCareWindow() else {
+        var stamped = block
+        stamped.lastModifiedBy = User.loadLocal()?.asCareProvider.rawValue
+        guard let clamped = stamped.clampedToCareWindow() else {
             throw TimeBlockError.outsideCareWindow
         }
 
@@ -190,7 +192,12 @@ final class TimeBlockRepository {
 
     /// Save multiple time blocks (each clamped to the care time window; blocks entirely outside are dropped)
     func saveAll(_ blocks: [TimeBlock]) async throws -> [TimeBlock] {
-        let clampedBlocks = blocks.compactMap { $0.clampedToCareWindow() }
+        let currentProvider = User.loadLocal()?.asCareProvider.rawValue
+        let clampedBlocks = blocks.compactMap { block -> TimeBlock? in
+            var stamped = block
+            stamped.lastModifiedBy = currentProvider
+            return stamped.clampedToCareWindow()
+        }
 
         isLoading = true
         error = nil

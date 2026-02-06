@@ -53,96 +53,98 @@ struct AIAssistantSheet: View {
     // MARK: - Input View
 
     private var inputView: some View {
-        VStack(spacing: 24) {
-            // Header
-            VStack(spacing: 8) {
-                Image(systemName: "wand.and.stars")
-                    .font(.system(size: 48))
-                    .foregroundStyle(Color.accentColor)
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 8) {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 48))
+                        .foregroundStyle(Color.accentColor)
 
-                Text("Schedule Assistant")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    Text("Schedule Assistant")
+                        .font(.title2)
+                        .fontWeight(.semibold)
 
-                Text(aiGreeting)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.top)
+                    Text(aiGreeting)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top)
 
-            // Voice input button
-            VoiceInputButton(
-                isRecording: voiceService.isRecording,
-                transcribedText: voiceService.transcribedText,
-                onToggle: {
-                    Task {
-                        if !voiceService.isAuthorized {
-                            _ = await voiceService.requestAuthorization()
-                            _ = await voiceService.requestMicrophoneAuthorization()
+                // Voice input button
+                VoiceInputButton(
+                    isRecording: voiceService.isRecording,
+                    transcribedText: voiceService.transcribedText,
+                    onToggle: {
+                        Task {
+                            if !voiceService.isAuthorized {
+                                _ = await voiceService.requestAuthorization()
+                                _ = await voiceService.requestMicrophoneAuthorization()
+                            }
+                            voiceService.toggleRecording()
                         }
-                        voiceService.toggleRecording()
+                    }
+                )
+
+                // Or divider
+                HStack {
+                    Rectangle()
+                        .fill(Color(.separator))
+                        .frame(height: 1)
+                    Text("or")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Rectangle()
+                        .fill(Color(.separator))
+                        .frame(height: 1)
+                }
+                .padding(.horizontal, 40)
+
+                // Text input
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("I'll pick up Mara at 5pm today instead of 4:45", text: $textInput, axis: .vertical)
+                        .textFieldStyle(.plain)
+                        .lineLimit(3...6)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .submitLabel(.done)
+
+                    Button {
+                        showingExamples.toggle()
+                    } label: {
+                        Label("Show examples", systemImage: "lightbulb")
+                            .font(.caption)
                     }
                 }
-            )
+                .padding(.horizontal)
 
-            // Or divider
-            HStack {
-                Rectangle()
-                    .fill(Color(.separator))
-                    .frame(height: 1)
-                Text("or")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Rectangle()
-                    .fill(Color(.separator))
-                    .frame(height: 1)
-            }
-            .padding(.horizontal, 40)
+                // Examples (collapsible)
+                if showingExamples {
+                    ExamplesSection()
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
 
-            // Text input
-            VStack(alignment: .leading, spacing: 8) {
-                TextField("Type your request...", text: $textInput, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .lineLimit(3...6)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
+                // Submit button
                 Button {
-                    showingExamples.toggle()
+                    submitCommand()
                 } label: {
-                    Label("Show examples", systemImage: "lightbulb")
-                        .font(.caption)
+                    HStack {
+                        Image(systemName: "paperplane.fill")
+                        Text("Submit")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(canSubmit ? Color.accentColor : .gray)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+                .disabled(!canSubmit)
+                .padding(.horizontal)
+                .padding(.bottom)
             }
-            .padding(.horizontal)
-
-            // Examples (collapsible)
-            if showingExamples {
-                ExamplesSection()
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            Spacer()
-
-            // Submit button
-            Button {
-                submitCommand()
-            } label: {
-                HStack {
-                    Image(systemName: "paperplane.fill")
-                    Text("Submit")
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(canSubmit ? Color.accentColor : .gray)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .disabled(!canSubmit)
-            .padding(.horizontal)
-            .padding(.bottom)
         }
+        .scrollDismissesKeyboard(.interactively)
         .onChange(of: voiceService.transcribedText) { _, newValue in
             if !newValue.isEmpty && !voiceService.isRecording {
                 textInput = newValue
@@ -355,7 +357,7 @@ struct AIAssistantSheet: View {
     // MARK: - Helpers
 
     private var aiGreeting: String {
-        if let user = User.loadLocal() {
+        if let user = UserProfileManager.shared.currentUser {
             let firstName = user.displayName.components(separatedBy: " ").first ?? user.displayName
             return "Tell me what you'd like to change, \(firstName)"
         }
@@ -368,7 +370,7 @@ struct AIAssistantSheet: View {
     }
 
     private func submitCommand() {
-        guard User.hasLocalIdentity else {
+        guard UserProfileManager.shared.currentUser != nil else {
             errorText = "Please set up your profile in Settings before using the AI assistant."
             sheetState = .error
             return

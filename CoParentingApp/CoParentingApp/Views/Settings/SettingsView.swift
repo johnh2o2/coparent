@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Settings and profile view
 struct SettingsView: View {
+    @Environment(\.userProfile) private var userProfile
     @State private var viewModel = SettingsViewModel()
     @State private var showingProfileEditor = false
 
@@ -10,12 +11,12 @@ struct SettingsView: View {
             Form {
                 // Profile section
                 Section {
-                    if let user = viewModel.currentUser {
+                    if let user = userProfile.currentUser {
                         HStack(spacing: 16) {
-                            // Avatar
+                            // Avatar with gradient fill
                             ZStack {
                                 Circle()
-                                    .fill(user.asCareProvider.color)
+                                    .fill(user.asCareProvider.gradient)
                                     .frame(width: 60, height: 60)
 
                                 Text(user.avatarInitials)
@@ -100,17 +101,17 @@ struct SettingsView: View {
 
                 // Provider names section
                 Section {
-                    ForEach(Array(viewModel.providerNames.keys.sorted(by: { $0.rawValue < $1.rawValue })), id: \.self) { provider in
+                    ForEach(Array(userProfile.providerNames.keys.sorted(by: { $0.rawValue < $1.rawValue })), id: \.self) { provider in
                         HStack {
-                            Circle()
+                            RoundedRectangle(cornerRadius: 4)
                                 .fill(provider.color)
-                                .frame(width: 12, height: 12)
+                                .frame(width: 16, height: 16)
 
                             TextField(
-                                provider.displayName,
+                                provider.defaultDisplayName,
                                 text: Binding(
-                                    get: { viewModel.providerNames[provider] ?? provider.displayName },
-                                    set: { viewModel.setProviderName($0, for: provider) }
+                                    get: { userProfile.providerNames[provider] ?? provider.defaultDisplayName },
+                                    set: { userProfile.setProviderName($0, for: provider) }
                                 )
                             )
                         }
@@ -118,7 +119,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Provider Names")
                 } footer: {
-                    Text("Customize the display names for each care provider.")
+                    Text("Customize the display names for each care provider. Changes update your identity everywhere.")
                 }
 
                 // AI Assistant section
@@ -251,8 +252,9 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .sheet(isPresented: $showingProfileEditor) {
                 ProfileEditorSheet(
-                    currentUser: viewModel.currentUser,
+                    currentUser: userProfile.currentUser,
                     onSave: { name, role in
+                        userProfile.updateUser(displayName: name, role: role)
                         Task {
                             await viewModel.saveUserProfile(displayName: name, role: role)
                         }
@@ -301,57 +303,271 @@ struct FamilyMemberRow: View {
     }
 }
 
-/// Profile editor sheet
+/// Profile editor sheet — 2-step setup flow:
+/// Step 1: Name the caregivers (only if never configured)
+/// Step 2: Pick which caregiver you are
 struct ProfileEditorSheet: View {
     let currentUser: User?
+    let isRequired: Bool
     let onSave: (String, UserRole) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var displayName: String
-    @State private var selectedRole: UserRole
+    @Environment(\.userProfile) private var userProfile
 
-    init(currentUser: User?, onSave: @escaping (String, UserRole) -> Void) {
+    // Step tracking
+    @State private var step: SetupStep
+
+    // Step 1 state — caregiver names
+    @State private var parentAName: String
+    @State private var parentBName: String
+    @State private var nannyName: String
+
+    // Step 2 state — identity pick
+    @State private var selectedRole: UserRole?
+
+    enum SetupStep {
+        case nameProviders
+        case pickIdentity
+    }
+
+    init(currentUser: User?, isRequired: Bool = false, onSave: @escaping (String, UserRole) -> Void) {
         self.currentUser = currentUser
+        self.isRequired = isRequired
         self.onSave = onSave
-        _displayName = State(initialValue: currentUser?.displayName ?? "")
-        _selectedRole = State(initialValue: currentUser?.role ?? .parentA)
+
+        let profile = UserProfileManager.shared
+        let storedA = profile.providerNames[.parentA]
+        let storedB = profile.providerNames[.parentB]
+        _parentAName = State(initialValue: profile.hasConfiguredProviderNames ? (storedA ?? "") : "")
+        _parentBName = State(initialValue: profile.hasConfiguredProviderNames ? (storedB ?? "") : "")
+        _nannyName = State(initialValue: profile.providerNames[.nanny] ?? "")
+
+        // Skip step 1 if provider names were already configured, or if editing existing user
+        if profile.hasConfiguredProviderNames || currentUser != nil {
+            _step = State(initialValue: .pickIdentity)
+        } else {
+            _step = State(initialValue: .nameProviders)
+        }
+
+        _selectedRole = State(initialValue: currentUser?.role)
     }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Name") {
-                    TextField("Display Name", text: $displayName)
-                }
-
-                Section("Role") {
-                    Picker("Role", selection: $selectedRole) {
-                        ForEach(UserRole.allCases, id: \.self) { role in
-                            Text(role.displayName).tag(role)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
+            Group {
+                switch step {
+                case .nameProviders:
+                    nameProvidersView
+                case .pickIdentity:
+                    pickIdentityView
                 }
             }
-            .navigationTitle(currentUser == nil ? "Create Profile" : "Edit Profile")
+            .navigationTitle(isRequired ? "Set Up Profile" : (currentUser == nil ? "Create Profile" : "Edit Profile"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
+                if !isRequired || step == .pickIdentity {
+                    ToolbarItem(placement: .cancellationAction) {
+                        if step == .pickIdentity && !userProfile.hasConfiguredProviderNames {
+                            Button("Back") {
+                                withAnimation { step = .nameProviders }
+                            }
+                        } else if !isRequired {
+                            Button("Cancel") { dismiss() }
+                        }
                     }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave(displayName, selectedRole)
-                        dismiss()
-                    }
-                    .disabled(displayName.isEmpty)
                 }
             }
         }
+        .interactiveDismissDisabled(isRequired)
+    }
+
+    // MARK: - Step 1: Name the caregivers
+
+    private var nameProvidersView: some View {
+        Form {
+            Section {
+                VStack(spacing: 8) {
+                    Text("Mara-Log-O")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.accentColor)
+
+                    Text("Who are the caregivers?")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
+
+            Section {
+                HStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(CareProvider.parentA.color)
+                        .frame(width: 16, height: 16)
+                    TextField("First caregiver name", text: $parentAName)
+                }
+                HStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(CareProvider.parentB.color)
+                        .frame(width: 16, height: 16)
+                    TextField("Second caregiver name", text: $parentBName)
+                }
+                HStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(CareProvider.nanny.color)
+                        .frame(width: 16, height: 16)
+                    TextField("Nanny (optional)", text: $nannyName)
+                }
+            } header: {
+                Text("Caregiver Names")
+            } footer: {
+                Text("Enter the names of everyone who helps with care. You can change these later in Settings.")
+            }
+
+            Section {
+                Button {
+                    saveProviderNames()
+                    withAnimation { step = .pickIdentity }
+                } label: {
+                    Text("Continue")
+                        .frame(maxWidth: .infinity)
+                        .fontWeight(.semibold)
+                }
+                .disabled(parentAName.trimmingCharacters(in: .whitespaces).isEmpty &&
+                          parentBName.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+    }
+
+    // MARK: - Step 2: Pick which caregiver you are
+
+    private var pickIdentityView: some View {
+        Form {
+            if isRequired {
+                Section {
+                    VStack(spacing: 8) {
+                        Text("Mara-Log-O")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(Color.accentColor)
+
+                        Text("Which one are you?")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                }
+            }
+
+            Section {
+                caregiverOption(role: .parentA, provider: .parentA)
+                caregiverOption(role: .parentB, provider: .parentB)
+                if !effectiveNannyName.isEmpty {
+                    caregiverOption(role: .caregiver, provider: .nanny)
+                }
+            } header: {
+                Text("Select Your Identity")
+            } footer: {
+                Text("Your schedule color and display name will match your selection.")
+            }
+
+            if selectedRole != nil {
+                Section {
+                    Button {
+                        saveIdentity()
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Image(systemName: "checkmark")
+                            Text("Done")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .fontWeight(.semibold)
+                    }
+                }
+            }
+        }
+    }
+
+    private func caregiverOption(role: UserRole, provider: CareProvider) -> some View {
+        let name = effectiveName(for: provider)
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedRole = role
+            }
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(provider.gradient)
+                        .frame(width: 44, height: 44)
+                    Text(User.initials(from: name))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name)
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.primary)
+                    Text(role.displayName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                if selectedRole == role {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(provider.color)
+                        .font(.title3)
+                }
+            }
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
+
+    private func effectiveName(for provider: CareProvider) -> String {
+        switch provider {
+        case .parentA: return parentAName.isEmpty ? userProfile.providerNames[.parentA] ?? "Caregiver 1" : parentAName
+        case .parentB: return parentBName.isEmpty ? userProfile.providerNames[.parentB] ?? "Caregiver 2" : parentBName
+        case .nanny: return effectiveNannyName
+        default: return provider.defaultDisplayName
+        }
+    }
+
+    private var effectiveNannyName: String {
+        nannyName.isEmpty ? (userProfile.providerNames[.nanny] ?? "") : nannyName
+    }
+
+    private func saveProviderNames() {
+        let trimA = parentAName.trimmingCharacters(in: .whitespaces)
+        let trimB = parentBName.trimmingCharacters(in: .whitespaces)
+        let trimN = nannyName.trimmingCharacters(in: .whitespaces)
+
+        if !trimA.isEmpty { userProfile.setProviderName(trimA, for: .parentA) }
+        if !trimB.isEmpty { userProfile.setProviderName(trimB, for: .parentB) }
+        if !trimN.isEmpty { userProfile.setProviderName(trimN, for: .nanny) }
+    }
+
+    private func saveIdentity() {
+        guard let role = selectedRole else { return }
+        let provider: CareProvider
+        switch role {
+        case .parentA: provider = .parentA
+        case .parentB: provider = .parentB
+        case .caregiver: provider = .nanny
+        }
+        let name = effectiveName(for: provider)
+        onSave(name, role)
     }
 }
 

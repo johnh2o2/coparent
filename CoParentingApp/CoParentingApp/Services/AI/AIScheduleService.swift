@@ -112,14 +112,22 @@ final class AIScheduleService {
         let title: String           // Short label, e.g. "Set default schedule"
         let purpose: String?        // Why the change was made
         let datesImpacted: String   // e.g. "Mon–Fri recurring, starting Feb 10"
-        let careTimeDelta: String?  // e.g. "+12.5h Parent A, +10h Parent B weekly"
+        let careTimeDelta: String?  // e.g. "+12.5h John, +10h Sarah weekly"
         let notificationMessage: String // Warm coparent notification
     }
 
     /// Generate all activity metadata in a single AI call.
-    func generateActivityMetadata(narration: String, summary: String, changeCount: Int, userName: String) async -> ActivityMetadata {
+    /// Accepts a structured change breakdown for better context.
+    func generateActivityMetadata(
+        narration: String,
+        summary: String,
+        changeCount: Int,
+        userName: String,
+        userRole: String? = nil,
+        changeBreakdown: String? = nil
+    ) async -> ActivityMetadata {
         let fallback = ActivityMetadata(
-            title: "\(changeCount) schedule change\(changeCount == 1 ? "" : "s")",
+            title: "\(userName) updated the schedule",
             purpose: nil,
             datesImpacted: "Today",
             careTimeDelta: nil,
@@ -128,27 +136,49 @@ final class AIScheduleService {
 
         guard let service = service else { return fallback }
 
+        // Build provider name mapping for the prompt
+        let providerMapping = [
+            "parent_a": CareProvider.parentA.displayName,
+            "parent_b": CareProvider.parentB.displayName,
+            "nanny": CareProvider.nanny.displayName
+        ]
+        let providerContext = providerMapping.map { "\($0.key) = \($0.value)" }.joined(separator: ", ")
+
+        let roleContext: String
+        if let role = userRole {
+            roleContext = "\nThe user \(userName) is \(role). Express care time impact from their perspective (e.g. \"+24h to your year\", \"-8h from your year\")."
+        } else {
+            roleContext = ""
+        }
+
         let systemPrompt = """
         You extract structured metadata about a schedule change. Respond with ONLY valid JSON, no markdown fences, no commentary.
-        Use display names (e.g. "Parent A", "Parent B", "Nanny"). Never use internal identifiers like "parent_a".
+
+        Provider name mapping: \(providerContext)
+        Always use the display names above — never say "Parent A" or "Parent B" or use internal IDs like "parent_a".
         Do not use markdown formatting anywhere in the values — plain text only.
+        \(roleContext)
 
         Return this exact JSON shape:
         {
-          "title": "short 3-6 word label for the change",
-          "purpose": "one sentence explaining why this change was made, or null if unclear",
+          "title": "A specific, human-readable summary of what changed. Incorporate the user's own words and intent. Good examples: 'John takes Saturday mornings', 'New weekly schedule: M/W/F John, T/Th Sarah', 'Nanny covers Friday afternoon', 'Swapped Tuesday and Thursday', 'Extended morning pickup to 8:15'. Bad examples (too generic): 'Updated the schedule', 'Made schedule changes', 'John made 19 changes'. The title should tell someone at a glance WHAT changed without needing to open the detail view.",
+          "purpose": "one sentence explaining why this change was made based on what the user said, or null if unclear",
           "datesImpacted": "concise description of affected dates, e.g. Mon–Fri recurring starting Feb 10",
-          "careTimeDelta": "net care time change per parent, e.g. +12.5h Parent A weekly, or null if unclear",
-          "notificationMessage": "warm 1-2 sentence note for the other coparent about what changed"
+          "careTimeDelta": "estimated net impact on yearly care time in hours, e.g. '+24h to your year' or '-8h from your year' or 'No net change'. Think about hours per week times weeks affected. Use null only if truly impossible to estimate.",
+          "notificationMessage": "A specific, warm 1-2 sentence note for the other coparent describing what changed. Include concrete details like days, times, or patterns. Good: 'John set up a new weekly routine — he has Mon/Wed/Fri mornings and you have Tue/Thu. Nanny covers afternoons.' Bad: 'John made 19 schedule changes.'"
         }
         """
 
-        let userMessage = """
+        var userMessage = """
         The user "\(userName)" said: "\(narration)"
 
-        The AI made these changes: \(summary)
+        AI summary of the changes: \(summary)
         Total changes: \(changeCount)
         """
+
+        if let breakdown = changeBreakdown {
+            userMessage += "\n\nDetailed breakdown of each change:\n\(breakdown)"
+        }
 
         do {
             let message = MessageParameter.Message(role: .user, content: .text(userMessage))
@@ -214,7 +244,11 @@ final class AIScheduleService {
         CARE TIME WINDOW: All blocks MUST have start_slot >= \(SlotUtility.careWindowStart) and end_slot <= \(SlotUtility.careWindowEnd).
         Never create blocks outside this window (\(SlotUtility.formatSlot(SlotUtility.careWindowStart)) - \(SlotUtility.formatSlot(SlotUtility.careWindowEnd))). Time outside the window is sleep/personal time and must not be scheduled.
 
-        Providers: parent_a, parent_b, nanny
+        Providers (internal ID → display name):
+        - parent_a → \(CareProvider.parentA.displayName)
+        - parent_b → \(CareProvider.parentB.displayName)
+        - nanny → \(CareProvider.nanny.displayName)
+        Always use the display names above in your responses. Never show "Parent A", "Parent B", or internal IDs to the user.
         \(Self.userIdentityPrompt(currentUser))
         Current schedule:
         """
@@ -288,6 +322,8 @@ final class AIScheduleService {
         1. Call `clear_day` for that date, then `set_day_schedule` with replacement blocks (NOT recurring).
 
         For simple single-block changes, use: change_time, add_block, remove_block, or swap_days.
+
+        IMPORTANT: In all your text responses, use people's actual display names (as listed in the provider mapping above). Never say "Parent A" or "Parent B" — always use their configured names.
         """
 
         return prompt
@@ -768,10 +804,10 @@ final class AIScheduleService {
         let firstName = user.displayName.components(separatedBy: " ").first ?? user.displayName
         return """
 
-        The user speaking to you is \(user.displayName) (role: \(user.role.displayName)).
-        When the user says "I" or "my", they mean \(firstName) (\(user.role.displayName)).
+        The user speaking to you is \(user.displayName) (provider ID: \(user.asCareProvider.rawValue)).
+        When the user says "I" or "my", they mean \(firstName).
         Address them by their first name (\(firstName)) in your responses.
-        In responses, use display names only (e.g. "Parent A"). Never use internal identifiers like "parent_a". Do not use markdown formatting.
+        In responses, always use the display names listed above. Never use internal identifiers like "parent_a" or generic labels like "Parent A". Do not use markdown formatting.
         """
     }
 

@@ -26,6 +26,9 @@ final class DependencyContainer {
         messageRepository = MessageRepository(cloudKit: cloudKitService)
     }
 
+    /// The locally persisted current user identity
+    var currentUser: User? { UserProfileManager.shared.currentUser }
+
     // MARK: - View Model Factories
 
     /// Create a CalendarViewModel

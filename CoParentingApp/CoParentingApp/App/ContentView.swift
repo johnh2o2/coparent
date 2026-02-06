@@ -3,6 +3,7 @@ import SwiftUI
 /// Main content view with tab navigation
 struct ContentView: View {
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.userProfile) private var userProfile
     @State private var selectedTab = Tab.home
     @State private var showShareAcceptedAlert = false
     @State private var showIdentityPrompt = false
@@ -58,14 +59,19 @@ struct ContentView: View {
                 .tag(Tab.settings)
         }
         .onAppear {
-            if !User.hasLocalIdentity {
+            if userProfile.currentUser == nil {
                 showIdentityPrompt = true
             }
         }
         .sheet(isPresented: $showIdentityPrompt) {
             ProfileEditorSheet(currentUser: nil, isRequired: true) { name, role in
-                let user = User(displayName: name, role: role)
-                user.saveLocally()
+                userProfile.updateUser(displayName: name, role: role)
+            }
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab == .home {
+                // Trigger a reload notification so DashboardView refreshes with latest data
+                NotificationCenter.default.post(name: .dashboardShouldReload, object: nil)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didAcceptCloudKitShare)) { _ in

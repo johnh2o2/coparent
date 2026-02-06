@@ -7,11 +7,12 @@ enum UserRole: String, Codable, CaseIterable {
     case parentB = "parent_b"
     case caregiver = "caregiver"
 
+    /// Display name using configured provider names when available
     var displayName: String {
         switch self {
-        case .parentA: return "Parent A"
-        case .parentB: return "Parent B"
-        case .caregiver: return "Caregiver"
+        case .parentA: return CareProvider.parentA.displayName
+        case .parentB: return CareProvider.parentB.displayName
+        case .caregiver: return CareProvider.nanny.displayName
         }
     }
 }
@@ -108,6 +109,30 @@ extension User {
         record[CloudKitKeys.createdAt.rawValue] = createdAt
 
         return record
+    }
+}
+
+// MARK: - Local Persistence
+
+extension User {
+    private static let localIdentityKey = "currentUserIdentity"
+
+    /// Save this user to UserDefaults for instant offline access
+    func saveLocally() {
+        if let data = try? JSONEncoder().encode(self) {
+            UserDefaults.standard.set(data, forKey: Self.localIdentityKey)
+        }
+    }
+
+    /// Load the locally persisted user identity
+    static func loadLocal() -> User? {
+        guard let data = UserDefaults.standard.data(forKey: localIdentityKey) else { return nil }
+        return try? JSONDecoder().decode(User.self, from: data)
+    }
+
+    /// Whether a local identity has been set
+    static var hasLocalIdentity: Bool {
+        UserDefaults.standard.data(forKey: localIdentityKey) != nil
     }
 }
 

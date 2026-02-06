@@ -17,7 +17,7 @@ struct ScheduleChangeEntry: Identifiable, Codable {
     let title: String             // Short AI title for list view
     let purpose: String?          // Context/reason (AI-derived)
     let datesImpacted: String     // Summary of dates affected
-    let careTimeDelta: String?    // e.g. "+12.5h Parent A weekly"
+    let careTimeDelta: String?    // e.g. "+12.5h to your year"
     let rawAISummary: String?     // Full batch.summary for raw view
 
     init(
@@ -45,7 +45,7 @@ struct ScheduleChangeEntry: Identifiable, Codable {
         self.userNarration = userNarration
         self.notificationMessage = notificationMessage
         self.changesApplied = changesApplied
-        self.title = title ?? "\(changesApplied) change\(changesApplied == 1 ? "" : "s")"
+        self.title = title ?? "\(userName) updated the schedule"
         self.purpose = purpose
         self.datesImpacted = datesImpacted ?? "Today"
         self.careTimeDelta = careTimeDelta
@@ -95,7 +95,7 @@ extension ScheduleChangeEntry {
         self.userNarration = record[CloudKitKeys.userNarration.rawValue] as? String
         self.notificationMessage = notificationMessage
         self.changesApplied = changesApplied
-        self.title = (record[CloudKitKeys.title.rawValue] as? String) ?? "\(changesApplied) change\(changesApplied == 1 ? "" : "s")"
+        self.title = (record[CloudKitKeys.title.rawValue] as? String) ?? "\(userName) updated the schedule"
         self.purpose = record[CloudKitKeys.purpose.rawValue] as? String
         self.datesImpacted = (record[CloudKitKeys.datesImpacted.rawValue] as? String) ?? "Today"
         self.careTimeDelta = record[CloudKitKeys.careTimeDelta.rawValue] as? String

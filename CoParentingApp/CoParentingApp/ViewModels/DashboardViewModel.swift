@@ -115,7 +115,7 @@ final class DashboardViewModel {
     }
 
     var greeting: String {
-        if let user = User.loadLocal() {
+        if let user = UserProfileManager.shared.currentUser {
             let firstName = user.displayName.components(separatedBy: " ").first ?? user.displayName
             return "Hi \(firstName)"
         }

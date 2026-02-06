@@ -31,6 +31,10 @@ struct CalendarView: View {
                 )
                 .ignoresSafeArea(edges: .bottom)
 
+                // Provider legend pinned to bottom
+                ProviderLegend()
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+
                 // Loading overlay (only show after a delay to avoid flash)
                 if viewModel.isLoading && viewModel.displayBlocks.isEmpty {
                     ProgressView()
@@ -73,12 +77,20 @@ struct CalendarView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        ForEach([CalendarType.day, .week, .month], id: \.self) { type in
-                            Button {
-                                viewModel.calendarType = type
-                            } label: {
-                                Label(type.displayName, systemImage: type.iconName)
-                            }
+                        Button {
+                            viewModel.calendarType = .day
+                        } label: {
+                            Label("Day", systemImage: CalendarType.day.iconName)
+                        }
+                        Button {
+                            viewModel.calendarType = .week
+                        } label: {
+                            Label("3-Day", systemImage: CalendarType.week.iconName)
+                        }
+                        Button {
+                            viewModel.calendarType = .month
+                        } label: {
+                            Label("Month", systemImage: CalendarType.month.iconName)
                         }
                     } label: {
                         Image(systemName: viewModel.calendarType.iconName)
@@ -155,9 +167,9 @@ struct CalendarView: View {
             formatter.dateFormat = "EEE, MMM d"
         case .week:
             formatter.dateFormat = "MMM d"
-            let endDate = Calendar.current.date(byAdding: .day, value: 6, to: viewModel.selectedDate)!
+            let endDate = Calendar.current.date(byAdding: .day, value: 2, to: viewModel.selectedDate)!
             let endFormatter = DateFormatter()
-            endFormatter.dateFormat = "d, yyyy"
+            endFormatter.dateFormat = "d"
             return "\(formatter.string(from: viewModel.selectedDate)) - \(endFormatter.string(from: endDate))"
         case .month:
             formatter.dateFormat = "MMMM yyyy"

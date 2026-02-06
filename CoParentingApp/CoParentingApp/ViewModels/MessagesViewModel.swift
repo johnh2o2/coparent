@@ -7,8 +7,8 @@ final class MessagesViewModel {
     private let repository: MessageRepository
     private let aiService: AIScheduleService
 
-    // Current user (would come from auth in real app)
-    var currentUserID: UUID = User.sampleParentA.id
+    // Current user identity (persisted locally, falls back to sample)
+    var currentUserID: UUID = User.loadLocal()?.id ?? User.sampleParentA.id
 
     // State
     var threads: [MessageThread] = []
@@ -136,7 +136,7 @@ final class MessagesViewModel {
             let blocks = try await timeBlockRepo.fetchCurrentWeekBlocks()
 
             // Parse the command (returns a batch)
-            let batch = try await aiService.parseScheduleCommand(message.content, currentBlocks: blocks)
+            let batch = try await aiService.parseScheduleCommand(message.content, currentBlocks: blocks, currentUser: User.loadLocal())
 
             // Apply the changes to the calendar
             let (toSave, toDelete) = batch.applyAll()
@@ -197,7 +197,11 @@ final class MessagesViewModel {
 
     /// Get display name for a user ID
     func displayName(for userID: UUID) -> String {
-        // In real app, would look up from user cache
+        // Check local user first
+        if let localUser = User.loadLocal(), localUser.id == userID {
+            return localUser.displayName
+        }
+        // Fallback to sample data
         if userID == User.sampleParentA.id {
             return User.sampleParentA.displayName
         } else if userID == User.sampleParentB.id {

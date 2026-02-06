@@ -212,7 +212,7 @@ extension Message {
                 authorID: parentA.id,
                 content: "@ai please swap my Tuesday and Thursday schedules",
                 isAICommand: true,
-                aiResponse: "I've prepared a swap of Tuesday (Parent A 8am-6pm) with Thursday (Parent B 8am-6pm). Please review and approve.",
+                aiResponse: "I've prepared a swap of your Tuesday (8am-6pm) with Thursday (8am-6pm). Please review and approve.",
                 createdAt: Date().addingTimeInterval(-1800)
             )
         ]

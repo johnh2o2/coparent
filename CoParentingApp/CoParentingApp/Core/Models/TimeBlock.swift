@@ -20,6 +20,7 @@ struct TimeBlock: Identifiable, Codable, Equatable {
     var recurrenceEndDate: Date?
     var createdAt: Date
     var modifiedAt: Date
+    var lastModifiedBy: String?
 
     init(
         id: UUID = UUID(),
@@ -31,7 +32,8 @@ struct TimeBlock: Identifiable, Codable, Equatable {
         recurrenceType: RecurrenceType = .none,
         recurrenceEndDate: Date? = nil,
         createdAt: Date = Date(),
-        modifiedAt: Date = Date()
+        modifiedAt: Date = Date(),
+        lastModifiedBy: String? = nil
     ) {
         self.id = id
         self.date = Calendar.current.startOfDay(for: date)
@@ -43,6 +45,7 @@ struct TimeBlock: Identifiable, Codable, Equatable {
         self.recurrenceEndDate = recurrenceEndDate
         self.createdAt = createdAt
         self.modifiedAt = modifiedAt
+        self.lastModifiedBy = lastModifiedBy
     }
 
     /// Whether this block has a positive duration (endSlot > startSlot)
@@ -102,7 +105,8 @@ struct TimeBlock: Identifiable, Codable, Equatable {
             recurrenceType: recurrenceType,
             recurrenceEndDate: recurrenceEndDate,
             createdAt: createdAt,
-            modifiedAt: Date()
+            modifiedAt: Date(),
+            lastModifiedBy: lastModifiedBy
         )
     }
 
@@ -148,6 +152,7 @@ extension TimeBlock {
         case recurrenceEndDate
         case createdAt
         case modifiedAt
+        case lastModifiedBy
     }
 
     init?(from record: CKRecord) {
@@ -178,6 +183,7 @@ extension TimeBlock {
         self.recurrenceEndDate = record[CloudKitKeys.recurrenceEndDate.rawValue] as? Date
         self.createdAt = record[CloudKitKeys.createdAt.rawValue] as? Date ?? record.creationDate ?? Date()
         self.modifiedAt = record[CloudKitKeys.modifiedAt.rawValue] as? Date ?? record.modificationDate ?? Date()
+        self.lastModifiedBy = record[CloudKitKeys.lastModifiedBy.rawValue] as? String
     }
 
     func toRecord(recordID: CKRecord.ID? = nil) -> CKRecord {
@@ -198,6 +204,7 @@ extension TimeBlock {
         record[CloudKitKeys.recurrenceEndDate.rawValue] = recurrenceEndDate
         record[CloudKitKeys.createdAt.rawValue] = createdAt
         record[CloudKitKeys.modifiedAt.rawValue] = modifiedAt
+        record[CloudKitKeys.lastModifiedBy.rawValue] = lastModifiedBy
 
         return record
     }

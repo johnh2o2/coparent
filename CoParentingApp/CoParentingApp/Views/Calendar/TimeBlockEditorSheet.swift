@@ -170,16 +170,21 @@ struct ProviderColorIndicator: View {
 /// Provider legend for the calendar
 struct ProviderLegend: View {
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             ForEach(CareProvider.allCases.filter { $0 != .none }) { provider in
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     Circle()
                         .fill(provider.color)
-                        .frame(width: 10, height: 10)
+                        .frame(width: 12, height: 12)
                     Text(provider.displayName)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.primary)
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(provider.lightColor)
+                .clipShape(Capsule())
             }
         }
         .padding(.horizontal)

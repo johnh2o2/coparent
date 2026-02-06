@@ -89,13 +89,14 @@ struct KVKCalendarWrapper: UIViewControllerRepresentable {
         func eventsForCalendar(systemEvents: [EKEvent]) -> [Event] {
             events.map { timeBlock in
                 let providerName = timeBlock.provider.displayName
+                let bulletName = "● \(providerName)"
                 var event = Event(ID: timeBlock.id.uuidString)
                 event.start = timeBlock.startTime
                 event.end = timeBlock.endTime
                 event.title = TextEvent(
-                    timeline: providerName,
+                    timeline: bulletName,
                     month: providerName,
-                    list: providerName
+                    list: bulletName
                 )
                 event.color = Event.Color(timeBlock.provider.uiColor)
                 event.isAllDay = false
@@ -107,6 +108,89 @@ struct KVKCalendarWrapper: UIViewControllerRepresentable {
 
                 return event
             }
+        }
+
+        func dequeueMonthViewEvents(_ events: [Event], date: Date, frame: CGRect) -> UIView? {
+            guard !events.isEmpty else { return nil }
+
+            // Calculate hours per provider from the TimeBlock data
+            let calendar = Calendar.current
+            let dayBlocks = self.events.filter { calendar.isDate($0.date, inSameDayAs: date) }
+            guard !dayBlocks.isEmpty else { return nil }
+
+            var hoursByProvider: [CareProvider: Double] = [:]
+            for block in dayBlocks {
+                hoursByProvider[block.provider, default: 0] += block.durationHours
+            }
+
+            let totalHours = hoursByProvider.values.reduce(0, +)
+
+            // Determine current user's provider for background tinting
+            let userProvider = UserProfileManager.shared.currentUser?.asCareProvider ?? .parentA
+            let userHours = hoursByProvider[userProvider] ?? 0
+
+            // Create custom view
+            let container = UIView(frame: frame)
+            container.clipsToBounds = true
+
+            // Background tint based on user's care hours (more hours = more intense)
+            // Max expected hours per day ~12.5h, so normalize to that
+            let intensity = min(userHours / 12.5, 1.0)
+            if intensity > 0 {
+                container.backgroundColor = userProvider.uiColor.withAlphaComponent(CGFloat(intensity) * 0.25)
+            }
+
+            // Show total hours label
+            let label = UILabel()
+            label.font = .systemFont(ofSize: 11, weight: .semibold)
+            label.textAlignment = .center
+
+            if hoursByProvider.count == 1, let (provider, hours) = hoursByProvider.first {
+                label.text = String(format: "%.1fh", hours)
+                label.textColor = provider.uiColor
+            } else {
+                label.text = String(format: "%.1fh", totalHours)
+                label.textColor = userProvider.uiColor
+            }
+
+            label.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(label)
+            NSLayoutConstraint.activate([
+                label.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                label.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
+            ])
+
+            // Show provider color dots below hours if multiple providers
+            if hoursByProvider.count > 1 {
+                let dotStack = UIStackView()
+                dotStack.axis = .horizontal
+                dotStack.spacing = 3
+                dotStack.alignment = .center
+                dotStack.translatesAutoresizingMaskIntoConstraints = false
+
+                let sortedProviders: [CareProvider] = [.parentA, .parentB, .nanny]
+                for provider in sortedProviders {
+                    if let hours = hoursByProvider[provider], hours > 0 {
+                        let dot = UIView()
+                        dot.backgroundColor = provider.uiColor
+                        dot.layer.cornerRadius = 3
+                        dot.translatesAutoresizingMaskIntoConstraints = false
+                        NSLayoutConstraint.activate([
+                            dot.widthAnchor.constraint(equalToConstant: 6),
+                            dot.heightAnchor.constraint(equalToConstant: 6),
+                        ])
+                        dotStack.addArrangedSubview(dot)
+                    }
+                }
+
+                container.addSubview(dotStack)
+                NSLayoutConstraint.activate([
+                    dotStack.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                    dotStack.topAnchor.constraint(equalTo: label.bottomAnchor, constant: 2),
+                ])
+            }
+
+            return container
         }
 
         // MARK: - CalendarDelegate
@@ -169,20 +253,25 @@ class KVKCalendarViewController: UIViewController {
         style.timeSystem = .twelve
 
         // Timeline settings (15-minute granularity)
-        style.timeline.startHour = 6
+        // Start earlier to accommodate early-morning care blocks
+        style.timeline.startHour = 5
         style.timeline.endHour = 22
         style.timeline.widthTime = 60
-        style.timeline.heightTime = 60
+        // Taller rows make it easier to read and tap/drag events
+        style.timeline.heightTime = 80
         style.timeline.offsetTimeX = 8
         style.timeline.offsetTimeY = 0
         style.timeline.showLineHourMode = .today
+        // Scroll to 7 AM on load so morning blocks are visible without scrolling
+        style.timeline.scrollToHour = 7
 
         // Event settings
         style.event.iconFile = nil
         style.event.isEnableVisualSelect = true
         style.event.states = [.move, .resize]
 
-        // Week settings
+        // Week settings — show 3 days at a time for better readability on iPhone
+        style.week.daysInOneWeek = 3
         style.week.colorBackground = .systemBackground
         style.week.colorDate = .label
         style.week.colorNameDay = .secondaryLabel

@@ -119,28 +119,29 @@ struct ActivityDetailView: View {
 
     private var impactSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Impact", systemImage: "calendar.badge.clock")
+            Label("Impact on Your Year", systemImage: "chart.line.uptrend.xyaxis")
                 .font(.caption)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 10) {
+                if let delta = entry.careTimeDelta, !delta.isEmpty {
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.arrow.2.circlepath")
+                            .font(.caption)
+                            .foregroundStyle(entry.provider.color)
+                        Text(delta)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                }
+
                 HStack(spacing: 8) {
                     Image(systemName: "calendar")
                         .font(.caption)
                         .foregroundStyle(entry.provider.color)
                     Text(entry.datesImpacted)
                         .font(.subheadline)
-                }
-
-                if let delta = entry.careTimeDelta, !delta.isEmpty {
-                    HStack(spacing: 8) {
-                        Image(systemName: "arrow.left.arrow.right")
-                            .font(.caption)
-                            .foregroundStyle(entry.provider.color)
-                        Text(delta)
-                            .font(.subheadline)
-                    }
                 }
             }
             .padding()
@@ -188,12 +189,12 @@ struct ActivityDetailView: View {
             userRole: "parent_a",
             changeDescription: "Updated the weekly schedule",
             userNarration: "Set up M/W/F for me, T/Th for parent B",
-            notificationMessage: "John updated the weekly schedule — Parent A now covers Mon/Wed/Fri and you have Tuesdays and Thursdays.",
+            notificationMessage: "John updated the weekly schedule — he now covers Mon/Wed/Fri and you have Tuesdays and Thursdays.",
             changesApplied: 10,
-            title: "Set weekly schedule",
+            title: "John takes Mon/Wed/Fri, setting default schedule",
             purpose: "Establishing a recurring weekly pattern for consistent childcare coverage",
             datesImpacted: "Mon-Fri recurring, starting Feb 10",
-            careTimeDelta: "+37.5h Parent A, +25h Parent B weekly",
+            careTimeDelta: "+487h to your year",
             rawAISummary: "I've set up a recurring weekly schedule..."
         ))
     }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3EB64505A7DAEA96BBA3DE29 /* UserProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA94740829F8C72C932A0A6 /* UserProfileManager.swift */; };
 		A10000010000000000000001 /* CoParentingAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000001 /* CoParentingAppApp.swift */; };
 		A10000010000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000002 /* ContentView.swift */; };
 		A10000010000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000003 /* Assets.xcassets */; };
@@ -55,6 +56,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5AA94740829F8C72C932A0A6 /* UserProfileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserProfileManager.swift; path = CoParentingApp/App/UserProfileManager.swift; sourceTree = SOURCE_ROOT; };
 		A20000010000000000000000 /* CoParentingApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoParentingApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000010000000000000001 /* CoParentingAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoParentingAppApp.swift; sourceTree = "<group>"; };
 		A20000010000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -121,6 +123,7 @@
 			children = (
 				A50000010000000000000002 /* CoParentingApp */,
 				A50000010000000000000003 /* Products */,
+				5AA94740829F8C72C932A0A6 /* UserProfileManager.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -255,24 +258,6 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
-		A50000010000000000000021 /* Dashboard */ = {
-			isa = PBXGroup;
-			children = (
-				A20000010000000000000044 /* DashboardView.swift */,
-			);
-			path = Dashboard;
-			sourceTree = "<group>";
-		};
-		A50000010000000000000020 /* Activity */ = {
-			isa = PBXGroup;
-			children = (
-				A20000010000000000000040 /* ActivityJournalView.swift */,
-				A20000010000000000000041 /* ActivityDetailView.swift */,
-				A20000010000000000000042 /* ActivityRawView.swift */,
-			);
-			path = Activity;
-			sourceTree = "<group>";
-		};
 		A50000010000000000000014 /* Calendar */ = {
 			isa = PBXGroup;
 			children = (
@@ -326,6 +311,24 @@
 				A20000010000000000000029 /* ScheduleChangeApprovalView.swift */,
 			);
 			path = AI;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000020 /* Activity */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000040 /* ActivityJournalView.swift */,
+				A20000010000000000000041 /* ActivityDetailView.swift */,
+				A20000010000000000000042 /* ActivityRawView.swift */,
+			);
+			path = Activity;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000021 /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000044 /* DashboardView.swift */,
+			);
+			path = Dashboard;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -447,6 +450,7 @@
 				A10000010000000000000043 /* DashboardViewModel.swift in Sources */,
 				A10000010000000000000044 /* DashboardView.swift in Sources */,
 				A10000010000000000000045 /* Haptics.swift in Sources */,
+				3EB64505A7DAEA96BBA3DE29 /* UserProfileManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

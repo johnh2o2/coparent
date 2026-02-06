@@ -27,8 +27,8 @@ final class SettingsViewModel {
     var careWindowStart: Int = SlotUtility.defaultCareWindowStart
     var careWindowEnd: Int = SlotUtility.defaultCareWindowEnd
     var providerNames: [CareProvider: String] = [
-        .parentA: "Parent A",
-        .parentB: "Parent B",
+        .parentA: "Caregiver 1",
+        .parentB: "Caregiver 2",
         .nanny: "Nanny"
     ]
 
@@ -43,6 +43,7 @@ final class SettingsViewModel {
         self.cloudKit = cloudKit
         self.aiService = aiService
         self.anthropicAPIKey = AIScheduleService.savedAPIKey ?? ""
+        self.currentUser = UserProfileManager.shared.currentUser
     }
 
     // MARK: - Setup
@@ -101,6 +102,8 @@ final class SettingsViewModel {
             let record = user.toRecord()
             let _ = try await cloudKit.save(record)
             currentUser = user
+            user.saveLocally()
+            UserProfileManager.shared.reload()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -184,12 +187,11 @@ final class SettingsViewModel {
         UserDefaults.standard.set(view, forKey: "defaultCalendarView")
     }
 
-    /// Update provider display name
+    /// Update provider display name — delegates to UserProfileManager for propagation
     func setProviderName(_ name: String, for provider: CareProvider) {
         providerNames[provider] = name
-        // Convert to [String: String] keyed by rawValue for UserDefaults
-        let stringKeyed = Dictionary(uniqueKeysWithValues: providerNames.map { ($0.key.rawValue, $0.value) })
-        UserDefaults.standard.set(stringKeyed, forKey: "providerNames")
+        UserProfileManager.shared.setProviderName(name, for: provider)
+        currentUser = UserProfileManager.shared.currentUser
     }
 
     /// Update care window start slot
@@ -228,13 +230,9 @@ final class SettingsViewModel {
         careWindowStart = SlotUtility.careWindowStart
         careWindowEnd = SlotUtility.careWindowEnd
 
-        if let savedNames = UserDefaults.standard.dictionary(forKey: "providerNames") as? [String: String] {
-            for (key, value) in savedNames {
-                if let provider = CareProvider(rawValue: key) {
-                    providerNames[provider] = value
-                }
-            }
-        }
+        // Sync provider names from the shared profile manager
+        providerNames = UserProfileManager.shared.providerNames
+        currentUser = UserProfileManager.shared.currentUser
     }
 
     // MARK: - Sync

@@ -121,8 +121,8 @@ struct ActivityRawView: View {
             title: "Set weekly schedule",
             purpose: "Establishing a recurring weekly pattern",
             datesImpacted: "Mon-Fri recurring, starting Feb 10",
-            careTimeDelta: "+37.5h Parent A weekly",
-            rawAISummary: "I've set up a **recurring weekly** schedule with the following pattern:\n\n- Monday/Wednesday/Friday: Parent A covers 7:00 AM - 7:30 PM\n- Tuesday/Thursday: Parent B covers 7:00 AM - 7:30 PM"
+            careTimeDelta: "+37.5h to your year",
+            rawAISummary: "I've set up a **recurring weekly** schedule with the following pattern:\n\n- Monday/Wednesday/Friday: John covers 7:00 AM - 7:30 PM\n- Tuesday/Thursday: Sarah covers 7:00 AM - 7:30 PM"
         ))
     }
 }

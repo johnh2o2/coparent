@@ -259,7 +259,7 @@ final class CalendarViewModel {
         errorMessage = nil
 
         do {
-            let batch = try await aiService.parseScheduleCommand(command, currentBlocks: timeBlocks, currentUser: User.loadLocal())
+            let batch = try await aiService.parseScheduleCommand(command, currentBlocks: timeBlocks, currentUser: UserProfileManager.shared.currentUser)
             pendingBatches.append(batch)
             isLoading = false
             return batch
@@ -306,14 +306,19 @@ final class CalendarViewModel {
 
     /// Log an activity journal entry after a batch is applied.
     private func logActivityEntry(for batch: ScheduleChangeBatch) async {
-        guard let user = User.loadLocal() else { return }
+        guard let user = UserProfileManager.shared.currentUser else { return }
+
+        // Build a structured breakdown of changes for better metadata
+        let breakdown = Self.buildChangeBreakdown(batch)
 
         // Generate all metadata in a single AI call
         let metadata = await aiService.generateActivityMetadata(
             narration: batch.originalCommand,
             summary: batch.summary,
             changeCount: batch.changeCount,
-            userName: user.displayName
+            userName: user.displayName,
+            userRole: user.role.displayName,
+            changeBreakdown: breakdown
         )
 
         let entry = ScheduleChangeEntry(
@@ -332,6 +337,78 @@ final class CalendarViewModel {
         )
 
         await ScheduleChangeRepository.shared.save(entry)
+    }
+
+    /// Build a concise, structured breakdown of changes in a batch for activity metadata.
+    static func buildChangeBreakdown(_ batch: ScheduleChangeBatch) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE, MMM d"
+
+        var adds: [String] = []
+        var removes: [String] = []
+        var modifications: [String] = []
+        var isRecurring = false
+
+        for change in batch.changes {
+            switch change.changeType {
+            case .addBlock:
+                if let block = change.proposedBlock {
+                    let time = SlotUtility.formatSlotRange(start: block.startSlot, end: block.endSlot)
+                    let recur = block.recurrenceType != .none ? " (recurring weekly)" : ""
+                    if block.recurrenceType != .none { isRecurring = true }
+                    adds.append("\(block.provider.displayName) on \(formatter.string(from: block.date)) \(time)\(recur)")
+                }
+            case .removeBlock:
+                if let block = change.originalBlock {
+                    let time = SlotUtility.formatSlotRange(start: block.startSlot, end: block.endSlot)
+                    removes.append("\(block.provider.displayName) on \(formatter.string(from: block.date)) \(time)")
+                }
+            case .changeTime:
+                if let orig = change.originalBlock, let prop = change.proposedBlock {
+                    let oldTime = SlotUtility.formatSlotRange(start: orig.startSlot, end: orig.endSlot)
+                    let newTime = SlotUtility.formatSlotRange(start: prop.startSlot, end: prop.endSlot)
+                    modifications.append("\(orig.provider.displayName): \(oldTime) → \(newTime) on \(formatter.string(from: prop.date))")
+                }
+            case .swap:
+                if let orig = change.originalBlock, let sec = change.secondaryOriginalBlock {
+                    modifications.append("Swapped \(formatter.string(from: orig.date)) (\(orig.provider.displayName)) with \(formatter.string(from: sec.date)) (\(sec.provider.displayName))")
+                }
+            case .reassign:
+                if let orig = change.originalBlock, let prop = change.proposedBlock {
+                    modifications.append("Reassigned \(formatter.string(from: orig.date)) from \(orig.provider.displayName) to \(prop.provider.displayName)")
+                }
+            }
+        }
+
+        var lines: [String] = []
+        if !adds.isEmpty {
+            // Summarize if too many adds (e.g. recurring weekly schedule)
+            if adds.count > 6 {
+                // Group by provider
+                var byProvider: [String: Int] = [:]
+                for change in batch.changes where change.changeType == .addBlock {
+                    if let block = change.proposedBlock {
+                        byProvider[block.provider.displayName, default: 0] += 1
+                    }
+                }
+                let providerSummary = byProvider.map { "\($0.value) blocks for \($0.key)" }.joined(separator: ", ")
+                lines.append("Added: \(providerSummary)\(isRecurring ? " (recurring weekly)" : "")")
+            } else {
+                lines.append("Added: " + adds.joined(separator: "; "))
+            }
+        }
+        if !removes.isEmpty {
+            if removes.count > 6 {
+                lines.append("Removed: \(removes.count) existing blocks (clearing old schedule)")
+            } else {
+                lines.append("Removed: " + removes.joined(separator: "; "))
+            }
+        }
+        if !modifications.isEmpty {
+            lines.append("Modified: " + modifications.joined(separator: "; "))
+        }
+
+        return lines.joined(separator: "\n")
     }
 
     /// Reject a pending batch.

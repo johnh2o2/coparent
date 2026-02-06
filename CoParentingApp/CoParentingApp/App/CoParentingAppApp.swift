@@ -25,11 +25,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct CoParentingAppApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var dependencies = DependencyContainer.shared
+    @State private var userProfile = UserProfileManager.shared
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(\.dependencies, dependencies)
+                .environment(\.userProfile, userProfile)
                 .task {
                     await dependencies.setup()
                 }

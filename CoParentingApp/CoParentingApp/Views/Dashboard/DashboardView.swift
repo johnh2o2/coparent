@@ -3,6 +3,8 @@ import SwiftUI
 /// Home tab showing care balance dashboard and recent activity.
 struct DashboardView: View {
     @State private var viewModel = DashboardViewModel()
+    @State private var calendarViewModel = CalendarViewModel()
+    @State private var showAIAssistant = false
 
     var body: some View {
         NavigationStack {
@@ -19,6 +21,9 @@ struct DashboardView: View {
                             .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal)
+
+                    // AI Quick Entry
+                    aiEntryCard
 
                     // Year at a Glance card
                     yearAtAGlanceCard
@@ -44,11 +49,69 @@ struct DashboardView: View {
             }
             .task {
                 await viewModel.loadDashboard()
+                await calendarViewModel.loadBlocks()
             }
             .refreshable {
                 await viewModel.loadDashboard()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .dashboardShouldReload)) { _ in
+                Task {
+                    await viewModel.loadDashboard()
+                }
+            }
+            .sheet(isPresented: $showAIAssistant, onDismiss: {
+                Task {
+                    await viewModel.loadDashboard()
+                    await calendarViewModel.loadBlocks()
+                }
+            }) {
+                AIAssistantSheet(calendarViewModel: calendarViewModel)
+            }
         }
+    }
+
+    // MARK: - AI Quick Entry
+
+    private var aiEntryCard: some View {
+        Button {
+            showAIAssistant = true
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "sparkles")
+                    .font(.title3)
+                    .foregroundStyle(.white.opacity(0.9))
+
+                Text("What would you like to plan?")
+                    .font(.body)
+                    .foregroundStyle(.white.opacity(0.7))
+
+                Spacer()
+
+                Image(systemName: "mic.fill")
+                    .font(.body)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(10)
+                    .background(.white.opacity(0.15))
+                    .clipShape(Circle())
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
+            .background(
+                LinearGradient(
+                    colors: [
+                        Color.accentColor,
+                        Color.accentColor.opacity(0.8)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.accentColor.opacity(0.3), radius: 12, y: 6)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .simultaneousGesture(TapGesture().onEnded { Haptics.light() })
     }
 
     // MARK: - Year at a Glance
@@ -62,7 +125,7 @@ struct DashboardView: View {
                     .font(.headline)
             }
 
-            // Two columns: Parent A + Parent B
+            // Two columns: primary caregivers
             HStack(spacing: 20) {
                 providerColumn(
                     name: CareProvider.parentA.displayName,
@@ -89,7 +152,7 @@ struct DashboardView: View {
                     Circle()
                         .fill(CareProvider.nanny.color)
                         .frame(width: 8, height: 8)
-                    Text("\(CareProvider.nanny.displayName): \(String(format: "%.0f", viewModel.nannyHours))h")
+                    Text("\(CareProvider.nanny.displayName): \(formatDaysAndHours(viewModel.nannyHours))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -109,16 +172,21 @@ struct DashboardView: View {
                 .fontWeight(.medium)
                 .foregroundStyle(.secondary)
 
-            Text(String(format: "%.0f", hours))
-                .font(.title)
+            Text(formatDaysAndHours(hours))
+                .font(.title3)
                 .fontWeight(.bold)
                 .foregroundStyle(color)
-
-            Text("hours")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func formatDaysAndHours(_ totalHours: Double) -> String {
+        let days = Int(totalHours) / 24
+        let remainingHours = Int(totalHours) % 24
+        if days > 0 {
+            return "\(days)d \(remainingHours)h"
+        }
+        return "\(Int(totalHours))h"
     }
 
     private var balanceBar: some View {
@@ -156,7 +224,7 @@ struct DashboardView: View {
                         .foregroundStyle(.secondary)
                 }
             } else {
-                Text("\(String(format: "%.0f", viewModel.balanceDelta))h apart — you might want to plan together to close the gap")
+                Text("\(formatDaysAndHours(viewModel.balanceDelta)) apart — you might want to plan together to close the gap")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -255,10 +323,19 @@ struct DashboardView: View {
                 .font(.caption2)
                 .foregroundStyle(Color.accentColor)
 
-            Text(entry.title)
-                .font(.caption)
-                .fontWeight(.medium)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+
+                if let delta = entry.careTimeDelta, !delta.isEmpty {
+                    Text(delta)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
 
             Spacer()
 

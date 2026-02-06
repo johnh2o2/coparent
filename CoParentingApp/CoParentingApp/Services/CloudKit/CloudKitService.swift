@@ -5,6 +5,7 @@ import CloudKit
 
 extension Notification.Name {
     static let didAcceptCloudKitShare = Notification.Name("didAcceptCloudKitShare")
+    static let dashboardShouldReload = Notification.Name("dashboardShouldReload")
 }
 
 /// Error types for CloudKit operations
@@ -65,7 +66,7 @@ final class CloudKitService {
     }
 
     private init() {
-        container = CKContainer(identifier: "iCloud.com.johnhoffman.CoParentingAppTwo")
+        container = CKContainer(identifier: "iCloud.com.johnhoffman.CoParenting")
         privateDatabase = container.privateCloudDatabase
         sharedDatabase = container.sharedCloudDatabase
     }

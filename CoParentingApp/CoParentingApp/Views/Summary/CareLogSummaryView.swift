@@ -34,6 +34,7 @@ struct CareLogSummaryView: View {
                             .padding()
                             .background(.regularMaterial)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
 
                         // Provider breakdown
                         ProviderBreakdownSection(stats: viewModel.providerStats)
@@ -45,6 +46,7 @@ struct CareLogSummaryView: View {
                                 .padding()
                                 .background(.regularMaterial)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
                         }
                     }
                 }
@@ -121,21 +123,21 @@ struct SummaryCardsSection: View {
                 title: "Total Hours",
                 value: String(format: "%.1f", totalHours),
                 icon: "clock.fill",
-                color: .blue
+                color: .accentColor
             )
 
             StatCard(
                 title: "Days",
                 value: "\(dayCount)",
                 icon: "calendar",
-                color: .green
+                color: .accentColor
             )
 
             StatCard(
                 title: "Avg/Day",
                 value: String(format: "%.1f", averagePerDay),
                 icon: "chart.bar.fill",
-                color: .orange
+                color: .accentColor
             )
         }
     }
@@ -166,6 +168,7 @@ struct StatCard: View {
         .padding()
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
 }
 
@@ -173,19 +176,35 @@ struct StatCard: View {
 struct ProviderPieChart: View {
     let data: [(provider: CareProvider, hours: Double, color: Color)]
 
+    private var totalHours: Double {
+        data.reduce(0) { $0 + $1.hours }
+    }
+
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Care Distribution")
+            Text("Care Coverage")
                 .font(.headline)
 
-            Chart(data, id: \.provider) { item in
-                SectorMark(
-                    angle: .value("Hours", item.hours),
-                    innerRadius: .ratio(0.5),
-                    angularInset: 2
-                )
-                .foregroundStyle(item.color)
-                .cornerRadius(4)
+            ZStack {
+                Chart(data, id: \.provider) { item in
+                    SectorMark(
+                        angle: .value("Hours", item.hours),
+                        innerRadius: .ratio(0.5),
+                        angularInset: 2
+                    )
+                    .foregroundStyle(item.color)
+                    .cornerRadius(4)
+                }
+
+                // Center label showing total hours
+                VStack(spacing: 2) {
+                    Text(String(format: "%.0f", totalHours))
+                        .font(.title)
+                        .fontWeight(.bold)
+                    Text("hours")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             // Legend
@@ -210,7 +229,7 @@ struct ProviderBreakdownSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Provider Breakdown")
+            Text("Time Together")
                 .font(.headline)
 
             ForEach(stats) { stat in
@@ -220,6 +239,7 @@ struct ProviderBreakdownSection: View {
         .padding()
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
 }
 
@@ -256,7 +276,13 @@ struct ProviderStatRow: View {
                         .fill(Color(.systemGray5))
 
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(stat.provider.color)
+                        .fill(
+                            LinearGradient(
+                                colors: [stat.provider.lightColor, stat.provider.color],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .frame(width: geometry.size.width * CGFloat(stat.percentage / 100))
                 }
             }
