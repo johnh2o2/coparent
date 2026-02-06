@@ -29,11 +29,10 @@ final class MessageRepository {
         defer { isLoading = false }
 
         guard cloudKit.isAuthenticated else {
-            if threads.isEmpty {
-                loadSampleData()
-            }
+            print("[MessageRepository] fetchThreads() — CloudKit not authenticated, returning local cache (\(threads.count) threads)")
             return threads
         }
+        print("[MessageRepository] fetchThreads() — CloudKit authenticated, fetching from CloudKit")
 
         let sortDescriptors = [
             NSSortDescriptor(key: "lastMessageAt", ascending: false)
@@ -135,8 +134,10 @@ final class MessageRepository {
         defer { isLoading = false }
 
         guard cloudKit.isAuthenticated else {
+            print("[MessageRepository] fetchMessages() — CloudKit not authenticated, returning local cache")
             return messages[threadID] ?? []
         }
+        print("[MessageRepository] fetchMessages() — CloudKit authenticated, fetching from CloudKit")
 
         let predicate = NSPredicate(format: "threadID == %@", threadID.uuidString)
         let sortDescriptors = [

@@ -2,30 +2,35 @@ import SwiftUI
 
 /// List of message threads
 struct MessageThreadListView: View {
-    @State private var viewModel = MessagesViewModel()
+    @Environment(\.dependencies) private var dependencies
+    @State private var viewModel: MessagesViewModel?
     @State private var showingNewThread = false
     @State private var newThreadTitle = ""
 
     var body: some View {
         NavigationStack {
             Group {
-                if viewModel.threads.isEmpty && !viewModel.isLoading {
-                    ContentUnavailableView(
-                        "No Messages",
-                        systemImage: "message",
-                        description: Text("Start a conversation with your co-parent")
-                    )
-                } else {
-                    List {
-                        ForEach(viewModel.threads) { thread in
-                            NavigationLink {
-                                MessageDetailView(viewModel: viewModel, thread: thread)
-                            } label: {
-                                ThreadRow(thread: thread)
+                if let vm = viewModel {
+                    if vm.threads.isEmpty && !vm.isLoading {
+                        ContentUnavailableView(
+                            "No Messages",
+                            systemImage: "message",
+                            description: Text("Start a conversation with your co-parent")
+                        )
+                    } else {
+                        List {
+                            ForEach(vm.threads) { thread in
+                                NavigationLink {
+                                    MessageDetailView(viewModel: vm, thread: thread)
+                                } label: {
+                                    ThreadRow(thread: thread)
+                                }
                             }
                         }
+                        .listStyle(.insetGrouped)
                     }
-                    .listStyle(.insetGrouped)
+                } else {
+                    ProgressView("Loading...")
                 }
             }
             .navigationTitle("Messages")
@@ -39,7 +44,7 @@ struct MessageThreadListView: View {
                 }
             }
             .overlay {
-                if viewModel.isLoading {
+                if viewModel?.isLoading == true {
                     ProgressView()
                 }
             }
@@ -51,7 +56,7 @@ struct MessageThreadListView: View {
                 Button("Create") {
                     Task {
                         // In real app, would select participants
-                        _ = await viewModel.createThread(
+                        _ = await viewModel?.createThread(
                             title: newThreadTitle,
                             participantIDs: [User.sampleParentA.id, User.sampleParentB.id]
                         )
@@ -60,10 +65,13 @@ struct MessageThreadListView: View {
                 }
             }
             .task {
-                await viewModel.loadThreads()
+                if viewModel == nil {
+                    viewModel = dependencies.makeMessagesViewModel()
+                }
+                await viewModel?.loadThreads()
             }
             .refreshable {
-                await viewModel.refresh()
+                await viewModel?.refresh()
             }
         }
     }

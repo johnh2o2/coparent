@@ -50,20 +50,39 @@ final class DependencyContainer {
 
     // MARK: - App Setup
 
+    /// Whether CloudKit setup has completed
+    var isCloudKitReady = false
+
     /// Initialize the app services
     func setup() async {
-        // Load local sample data immediately so views have content
-        timeBlockRepository.loadSampleData()
-        messageRepository.loadSampleData()
+        // Set up CloudKit — don't load sample data, just wait for real data
+        do {
+            try await cloudKitService.setup()
+            try await cloudKitService.setupSubscriptions()
+            print("[DependencyContainer] CloudKit setup complete, authenticated: \(cloudKitService.isAuthenticated)")
 
-        // Attempt CloudKit in background — don't block the UI
-        Task.detached(priority: .utility) { [cloudKitService] in
-            do {
-                try await cloudKitService.setup()
-                try await cloudKitService.setupSubscriptions()
-            } catch {
-                print("CloudKit setup failed (using local storage): \(error)")
+            isCloudKitReady = true
+
+            // Fetch initial data now that CloudKit is ready
+            if cloudKitService.isAuthenticated {
+                let calendar = Calendar.current
+                let today = Date()
+                let rangeStart = calendar.date(byAdding: .month, value: -1, to: today)!
+                let rangeEnd = calendar.date(byAdding: .month, value: 2, to: today)!
+
+                let blocks = try await timeBlockRepository.fetchBlocks(from: rangeStart, to: rangeEnd)
+                print("[DependencyContainer] Initial fetch got \(blocks.count) blocks")
+
+                do {
+                    let threads = try await messageRepository.fetchThreads()
+                    print("[DependencyContainer] Initial fetch got \(threads.count) message threads")
+                } catch {
+                    print("[DependencyContainer] Message fetch failed (non-fatal): \(error.localizedDescription)")
+                }
             }
+        } catch {
+            print("[DependencyContainer] CloudKit setup failed: \(error)")
+            isCloudKitReady = true  // Still mark as ready so UI isn't stuck
         }
     }
 }

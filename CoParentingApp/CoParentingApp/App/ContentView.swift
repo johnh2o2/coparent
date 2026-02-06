@@ -2,8 +2,9 @@ import SwiftUI
 
 /// Main content view with tab navigation
 struct ContentView: View {
+    @Environment(\.dependencies) private var dependencies
     @State private var selectedTab = Tab.calendar
-    @State private var messagesViewModel = MessagesViewModel()
+    @State private var messagesViewModel: MessagesViewModel?
     @State private var showShareAcceptedAlert = false
 
     enum Tab: String, CaseIterable {
@@ -35,7 +36,7 @@ struct ContentView: View {
                     Label(Tab.messages.rawValue, systemImage: Tab.messages.iconName)
                 }
                 .tag(Tab.messages)
-                .badge(messagesViewModel.totalUnreadCount)
+                .badge(messagesViewModel?.totalUnreadCount ?? 0)
 
             CareLogSummaryView()
                 .tabItem {
@@ -50,7 +51,10 @@ struct ContentView: View {
                 .tag(Tab.settings)
         }
         .task {
-            await messagesViewModel.loadThreads()
+            if messagesViewModel == nil {
+                messagesViewModel = dependencies.makeMessagesViewModel()
+            }
+            await messagesViewModel?.loadThreads()
         }
         .onReceive(NotificationCenter.default.publisher(for: .didAcceptCloudKitShare)) { _ in
             showShareAcceptedAlert = true

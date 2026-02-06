@@ -65,7 +65,7 @@ final class CloudKitService {
     }
 
     private init() {
-        container = CKContainer(identifier: "iCloud.com.johnhoffman.CoParentingApp")
+        container = CKContainer(identifier: "iCloud.com.johnhoffman.CoParentingAppTwo")
         privateDatabase = container.privateCloudDatabase
         sharedDatabase = container.sharedCloudDatabase
     }
@@ -114,19 +114,49 @@ final class CloudKitService {
     /// Save a record to CloudKit
     func save(_ record: CKRecord) async throws -> CKRecord {
         syncStatus = .syncing
-        do {
-            // Ensure record is in custom zone
-            let zoneRecord = CKRecord(recordType: record.recordType, recordID: CKRecord.ID(recordName: record.recordID.recordName, zoneID: customZoneID))
-            for key in record.allKeys() {
-                zoneRecord[key] = record[key]
+        print("[CloudKitService] save() called for record type: \(record.recordType), ID: \(record.recordID.recordName)")
+
+        // Ensure record is in custom zone
+        let zoneRecord = CKRecord(recordType: record.recordType, recordID: CKRecord.ID(recordName: record.recordID.recordName, zoneID: customZoneID))
+        for key in record.allKeys() {
+            zoneRecord[key] = record[key]
+        }
+        print("[CloudKitService] Saving to zone: \(zoneRecord.recordID.zoneID.zoneName)")
+
+        // Use CKModifyRecordsOperation with .allKeys policy to handle both insert and update
+        let operation = CKModifyRecordsOperation(recordsToSave: [zoneRecord], recordIDsToDelete: nil)
+        operation.savePolicy = .allKeys  // Overwrites server record with local values
+        operation.qualityOfService = .userInitiated
+
+        return try await withCheckedThrowingContinuation { continuation in
+            var savedRecord: CKRecord?
+
+            operation.perRecordSaveBlock = { _, result in
+                if case .success(let record) = result {
+                    savedRecord = record
+                }
             }
 
-            let savedRecord = try await privateDatabase.save(zoneRecord)
-            syncStatus = .synced
-            return savedRecord
-        } catch {
-            syncStatus = .error(error.localizedDescription)
-            throw mapError(error)
+            operation.modifyRecordsResultBlock = { result in
+                switch result {
+                case .success:
+                    if let record = savedRecord {
+                        print("[CloudKitService] Save SUCCESS — record ID: \(record.recordID.recordName)")
+                        self.syncStatus = .synced
+                        continuation.resume(returning: record)
+                    } else {
+                        print("[CloudKitService] Save FAILED — no record returned")
+                        self.syncStatus = .error("No record returned")
+                        continuation.resume(throwing: CloudKitError.unknown(NSError(domain: "CloudKit", code: -1)))
+                    }
+                case .failure(let error):
+                    print("[CloudKitService] Save FAILED — error: \(error)")
+                    self.syncStatus = .error(error.localizedDescription)
+                    continuation.resume(throwing: self.mapError(error))
+                }
+            }
+
+            privateDatabase.add(operation)
         }
     }
 
@@ -181,8 +211,22 @@ final class CloudKitService {
     /// Batch save multiple records
     func batchSave(_ records: [CKRecord]) async throws -> [CKRecord] {
         syncStatus = .syncing
+        print("[CloudKitService] batchSave() called for \(records.count) records")
+
+        // Ensure all records are in the custom zone
+        let zoneRecords = records.map { record -> CKRecord in
+            let zoneRecord = CKRecord(
+                recordType: record.recordType,
+                recordID: CKRecord.ID(recordName: record.recordID.recordName, zoneID: customZoneID)
+            )
+            for key in record.allKeys() {
+                zoneRecord[key] = record[key]
+            }
+            return zoneRecord
+        }
+
         do {
-            let modifyOperation = CKModifyRecordsOperation(recordsToSave: records, recordIDsToDelete: nil)
+            let modifyOperation = CKModifyRecordsOperation(recordsToSave: zoneRecords, recordIDsToDelete: nil)
             modifyOperation.savePolicy = .changedKeys
             modifyOperation.qualityOfService = .userInitiated
 
@@ -192,17 +236,22 @@ final class CloudKitService {
                 modifyOperation.modifyRecordsResultBlock = { result in
                     switch result {
                     case .success:
+                        print("[CloudKitService] batchSave SUCCESS — saved \(savedRecords.count) records")
                         self.syncStatus = .synced
                         continuation.resume(returning: savedRecords)
                     case .failure(let error):
+                        print("[CloudKitService] batchSave FAILED — error: \(error)")
                         self.syncStatus = .error(error.localizedDescription)
                         continuation.resume(throwing: self.mapError(error))
                     }
                 }
 
                 modifyOperation.perRecordSaveBlock = { _, result in
-                    if case .success(let record) = result {
+                    switch result {
+                    case .success(let record):
                         savedRecords.append(record)
+                    case .failure(let error):
+                        print("[CloudKitService] perRecordSave FAILED — error: \(error)")
                     }
                 }
 
@@ -273,6 +322,9 @@ final class CloudKitService {
                 _ = try await privateDatabase.save(subscription)
             } catch let error as CKError where error.code == .serverRejectedRequest {
                 // Subscription might already exist
+            } catch let error as CKError where error.code == .unknownItem {
+                // Record type doesn't exist yet — subscription will be created when schema exists
+                print("[CloudKit] Skipping subscription for \(recordType) — record type not yet in schema")
             }
         }
     }

@@ -41,11 +41,9 @@ final class TimeBlockRepository {
 
         defer { isLoading = false }
 
-        // If CloudKit is not available, return from local cache
+        // If CloudKit is not available, return from local cache (no sample data)
         guard cloudKit.isAuthenticated else {
-            if timeBlocks.isEmpty {
-                loadSampleData()
-            }
+            print("[TimeBlockRepository] fetchBlocks() — CloudKit not authenticated, returning local cache (\(timeBlocks.count) blocks)")
             let rangeStart = Calendar.current.startOfDay(for: startDate)
             let rangeEnd = Calendar.current.startOfDay(for: endDate)
             return timeBlocks.filter { block in
@@ -59,6 +57,7 @@ final class TimeBlockRepository {
                 return block.date >= rangeStart && block.date <= rangeEnd
             }
         }
+        print("[TimeBlockRepository] fetchBlocks() — CloudKit authenticated, fetching from CloudKit")
 
         // CloudKit doesn't support OR compound predicates, so run two queries and merge.
         let dateRangePredicate = NSPredicate(
@@ -153,6 +152,7 @@ final class TimeBlockRepository {
 
         // Local-only mode when CloudKit unavailable
         guard cloudKit.isAuthenticated else {
+            print("[TimeBlockRepository] save() — CloudKit not authenticated, using local storage")
             if let index = timeBlocks.firstIndex(where: { $0.id == clamped.id }) {
                 timeBlocks[index] = clamped
             } else {
@@ -161,6 +161,7 @@ final class TimeBlockRepository {
             }
             return clamped
         }
+        print("[TimeBlockRepository] save() — CloudKit authenticated, saving to CloudKit")
 
         do {
             let record = clamped.toRecord(recordID: recordIDMapping[clamped.id])
@@ -198,6 +199,7 @@ final class TimeBlockRepository {
 
         // Local-only mode
         guard cloudKit.isAuthenticated else {
+            print("[TimeBlockRepository] saveAll() — CloudKit not authenticated, using local storage for \(clampedBlocks.count) blocks")
             for block in clampedBlocks {
                 if let index = timeBlocks.firstIndex(where: { $0.id == block.id }) {
                     timeBlocks[index] = block
@@ -208,6 +210,7 @@ final class TimeBlockRepository {
             timeBlocks.sort { $0.date < $1.date || ($0.date == $1.date && $0.startSlot < $1.startSlot) }
             return clampedBlocks
         }
+        print("[TimeBlockRepository] saveAll() — CloudKit authenticated, saving \(clampedBlocks.count) blocks to CloudKit")
 
         do {
             let records = clampedBlocks.map { $0.toRecord(recordID: recordIDMapping[$0.id]) }
@@ -339,6 +342,17 @@ final class TimeBlockRepository {
     func clearCache() {
         timeBlocks.removeAll()
         recordIDMapping.removeAll()
+    }
+
+    /// Clear sample data (call when CloudKit becomes available)
+    func clearSampleData() {
+        timeBlocks.removeAll()
+        recordIDMapping.removeAll()
+    }
+
+    /// Replace all blocks with a new set (used after CloudKit fetch)
+    func replaceBlocks(_ blocks: [TimeBlock]) {
+        timeBlocks = blocks.sorted { $0.date < $1.date || ($0.date == $1.date && $0.startSlot < $1.startSlot) }
     }
 
     // MARK: - Helpers
