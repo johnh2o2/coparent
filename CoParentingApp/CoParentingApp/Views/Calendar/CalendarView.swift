@@ -143,6 +143,15 @@ struct CalendarView: View {
             .task {
                 await viewModel.loadBlocks()
             }
+            .onChange(of: viewModel.selectedDate) { _, newDate in
+                // Reload when the date moves outside the loaded range
+                // (e.g. swiping to a new month in KVK's month view)
+                if viewModel.isOutsideLoadedRange(newDate) {
+                    Task {
+                        await viewModel.loadBlocks()
+                    }
+                }
+            }
             .refreshable {
                 await viewModel.refresh()
             }

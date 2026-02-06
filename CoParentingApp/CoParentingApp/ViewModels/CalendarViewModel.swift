@@ -51,8 +51,9 @@ final class CalendarViewModel {
 
             // Load a broad range around the selected date so the calendar has
             // enough data for scrolling and view-type switching.
-            let rangeStart = calendar.date(byAdding: .weekOfYear, value: -2, to: selectedDate)!
-            let rangeEnd   = calendar.date(byAdding: .weekOfYear, value: 4, to: selectedDate)!
+            // Use months instead of weeks so monthly view has data when navigating.
+            let rangeStart = calendar.date(byAdding: .month, value: -2, to: selectedDate)!
+            let rangeEnd   = calendar.date(byAdding: .month, value: 4, to: selectedDate)!
             loadedRangeStart = rangeStart
             loadedRangeEnd = rangeEnd
 
@@ -109,6 +110,17 @@ final class CalendarViewModel {
     /// Recompute displayBlocks from the current timeBlocks and loaded range.
     private func rebuildDisplayBlocks() {
         displayBlocks = Self.expandRecurringBlocks(timeBlocks, from: loadedRangeStart, to: loadedRangeEnd)
+    }
+
+    /// Check if a date is outside the currently loaded range (with some margin).
+    func isOutsideLoadedRange(_ date: Date) -> Bool {
+        let calendar = Calendar.current
+        // Use a 1-month inner margin so we reload before hitting the edge
+        guard let safeStart = calendar.date(byAdding: .month, value: 1, to: loadedRangeStart),
+              let safeEnd = calendar.date(byAdding: .month, value: -1, to: loadedRangeEnd) else {
+            return true
+        }
+        return date < safeStart || date > safeEnd
     }
 
     /// Refresh data
