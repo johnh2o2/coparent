@@ -8,6 +8,17 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         Task {
             do {
                 try await CloudKitService.shared.acceptShare(metadata: metadata)
+
+                // Fetch provider names and claimed roles from the shared data
+                if let settings = await CloudKitService.shared.fetchSharedFamilySettings() {
+                    await MainActor.run {
+                        UserProfileManager.shared.importSharedFamilySettings(
+                            providerNames: settings.providerNames,
+                            claimedRoles: settings.claimedRoles
+                        )
+                    }
+                }
+
                 await MainActor.run {
                     NotificationCenter.default.post(name: .didAcceptCloudKitShare, object: nil)
                 }

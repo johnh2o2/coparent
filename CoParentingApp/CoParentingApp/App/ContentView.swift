@@ -75,7 +75,13 @@ struct ContentView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didAcceptCloudKitShare)) { _ in
-            showShareAcceptedAlert = true
+            if userProfile.currentUser == nil {
+                // User hasn't set up their profile yet — show identity picker
+                // (provider names were already imported from the share)
+                showIdentityPrompt = true
+            } else {
+                showShareAcceptedAlert = true
+            }
         }
         .alert("Share Accepted", isPresented: $showShareAcceptedAlert) {
             Button("OK", role: .cancel) { }

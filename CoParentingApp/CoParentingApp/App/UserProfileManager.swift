@@ -17,6 +17,12 @@ final class UserProfileManager {
         .nanny: "Nanny"
     ]
 
+    /// Roles already claimed by other family members (role → display name of who claimed it).
+    var claimedRoles: [UserRole: String] = [:]
+
+    /// Whether the user joined via a CloudKit share link (skip naming step).
+    var joinedViaShare: Bool = false
+
     private init() {
         reload()
     }
@@ -65,6 +71,20 @@ final class UserProfileManager {
     /// Whether provider names have ever been configured by the user.
     var hasConfiguredProviderNames: Bool {
         UserDefaults.standard.dictionary(forKey: "providerNames") != nil
+    }
+
+    /// Import provider names and claimed roles from a CloudKit share.
+    /// Called after accepting a share invitation.
+    func importSharedFamilySettings(providerNames: [CareProvider: String], claimedRoles: [UserRole: String]) {
+        // Save provider names locally
+        for (provider, name) in providerNames {
+            self.providerNames[provider] = name
+        }
+        persistProviderNames()
+
+        // Store claimed roles
+        self.claimedRoles = claimedRoles
+        self.joinedViaShare = true
     }
 
     // MARK: - Private

@@ -342,8 +342,8 @@ struct ProfileEditorSheet: View {
         _parentBName = State(initialValue: profile.hasConfiguredProviderNames ? (storedB ?? "") : "")
         _nannyName = State(initialValue: profile.providerNames[.nanny] ?? "")
 
-        // Skip step 1 if provider names were already configured, or if editing existing user
-        if profile.hasConfiguredProviderNames || currentUser != nil {
+        // Skip step 1 if provider names were already configured, joined via share, or editing existing user
+        if profile.hasConfiguredProviderNames || profile.joinedViaShare || currentUser != nil {
             _step = State(initialValue: .pickIdentity)
         } else {
             _step = State(initialValue: .nameProviders)
@@ -470,7 +470,11 @@ struct ProfileEditorSheet: View {
             } header: {
                 Text("Select Your Identity")
             } footer: {
-                Text("Your schedule color and display name will match your selection.")
+                if userProfile.claimedRoles.isEmpty {
+                    Text("Your schedule color and display name will match your selection.")
+                } else {
+                    Text("Identities already claimed by family members are locked. Your schedule color and display name will match your selection.")
+                }
             }
 
             if selectedRole != nil {
@@ -493,35 +497,50 @@ struct ProfileEditorSheet: View {
 
     private func caregiverOption(role: UserRole, provider: CareProvider) -> some View {
         let name = effectiveName(for: provider)
+        let claimedBy = userProfile.claimedRoles[role]
+        let isClaimed = claimedBy != nil && currentUser?.role != role
+
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                selectedRole = role
+            if !isClaimed {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    selectedRole = role
+                }
             }
         } label: {
             HStack(spacing: 14) {
                 ZStack {
                     Circle()
-                        .fill(provider.gradient)
+                        .fill(isClaimed ? AnyShapeStyle(Color(.systemGray4)) : AnyShapeStyle(provider.gradient))
                         .frame(width: 44, height: 44)
                     Text(User.initials(from: name))
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        .foregroundColor(isClaimed ? .secondary : .white)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(name)
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundStyle(.primary)
-                    Text(role.displayName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isClaimed ? .secondary : .primary)
+                    if isClaimed, let claimedBy {
+                        Text("Taken by \(claimedBy)")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    } else {
+                        Text(role.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Spacer()
 
-                if selectedRole == role {
+                if isClaimed {
+                    Image(systemName: "lock.fill")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                } else if selectedRole == role {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(provider.color)
                         .font(.title3)
@@ -531,6 +550,7 @@ struct ProfileEditorSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(isClaimed)
     }
 
     // MARK: - Helpers

@@ -125,10 +125,16 @@ final class SettingsViewModel {
         }
 
         do {
-            // Create a "family" record to share
+            // Create a "family" record to share, including provider names
             let familyRecord = CKRecord(recordType: "Family")
             familyRecord["name"] = "Our Family Schedule"
             familyRecord["createdBy"] = user.id.uuidString
+
+            // Include provider names so the share recipient gets them
+            let profile = UserProfileManager.shared
+            familyRecord["parentAName"] = profile.providerNames[.parentA] ?? "Caregiver 1"
+            familyRecord["parentBName"] = profile.providerNames[.parentB] ?? "Caregiver 2"
+            familyRecord["nannyName"] = profile.providerNames[.nanny] ?? "Nanny"
 
             let share = try await cloudKit.createShare(for: familyRecord, title: "Co-Parenting Schedule")
 
@@ -165,6 +171,14 @@ final class SettingsViewModel {
             }
 
             familyMembers = allUsers
+
+            // Update claimed roles in profile manager (exclude current user)
+            let profile = UserProfileManager.shared
+            var claimed: [UserRole: String] = [:]
+            for user in allUsers where user.id != profile.currentUser?.id {
+                claimed[user.role] = user.displayName
+            }
+            profile.claimedRoles = claimed
 
         } catch {
             // Ignore errors, just show what we have

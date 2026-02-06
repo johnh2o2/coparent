@@ -76,6 +76,11 @@ final class DependencyContainer {
                 let blocks = try await timeBlockRepository.fetchBlocks(from: rangeStart, to: rangeEnd)
                 print("[DependencyContainer] Initial fetch got \(blocks.count) blocks")
 
+                // Notify views that data is ready so they refresh
+                await MainActor.run {
+                    NotificationCenter.default.post(name: .dashboardShouldReload, object: nil)
+                }
+
                 do {
                     let threads = try await messageRepository.fetchThreads()
                     print("[DependencyContainer] Initial fetch got \(threads.count) message threads")

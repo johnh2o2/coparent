@@ -300,6 +300,43 @@ final class CloudKitService {
         return allRecords
     }
 
+    /// Fetch the shared Family record to get provider names and settings
+    func fetchSharedFamilySettings() async -> (providerNames: [CareProvider: String], claimedRoles: [UserRole: String])? {
+        var providerNames: [CareProvider: String] = [:]
+        var claimedRoles: [UserRole: String] = [:]
+
+        do {
+            // Fetch shared Family records for provider names
+            let familyRecords = try await fetchSharedRecords(recordType: "Family")
+            if let family = familyRecords.first {
+                if let aName = family["parentAName"] as? String { providerNames[.parentA] = aName }
+                if let bName = family["parentBName"] as? String { providerNames[.parentB] = bName }
+                if let nName = family["nannyName"] as? String { providerNames[.nanny] = nName }
+            }
+
+            // Fetch shared User records to find claimed roles
+            let userRecords = try await fetchSharedRecords(recordType: User.recordType)
+            for record in userRecords {
+                if let user = User(from: record) {
+                    claimedRoles[user.role] = user.displayName
+                }
+            }
+
+            // Also check private User records for claimed roles
+            let privateRecords = try await fetchRecords(recordType: User.recordType)
+            for record in privateRecords {
+                if let user = User(from: record) {
+                    claimedRoles[user.role] = user.displayName
+                }
+            }
+
+            return (providerNames, claimedRoles)
+        } catch {
+            print("[CloudKit] Failed to fetch shared family settings: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
     // MARK: - Subscriptions
 
     /// Set up subscriptions for real-time updates
