@@ -323,6 +323,8 @@ final class AIScheduleService {
 
         For simple single-block changes, use: change_time, add_block, remove_block, or swap_days.
 
+        PAST DATES: Users may ask to set or modify events on dates that have already passed (retroactive scheduling). This is fully supported. Use any date the user requests — past, present, or future. For set_weekly_schedule, use start_date to begin the schedule before today if needed.
+
         IMPORTANT: In all your text responses, use people's actual display names (as listed in the provider mapping above). Never say "Parent A" or "Parent B" — always use their configured names.
         """
 
@@ -454,6 +456,7 @@ final class AIScheduleService {
                                 ]
                             )
                         ),
+                        "start_date": .init(type: .string, description: "Optional start date in YYYY-MM-DD format. The schedule begins on this date. Defaults to today if omitted. Use a past date for retroactive scheduling."),
                         "duration_weeks": .init(type: .integer, description: "How many weeks this schedule repeats. Use 52 for one year."),
                         "explanation": .init(type: .string, description: "Brief explanation of the schedule")
                     ],
@@ -734,8 +737,16 @@ final class AIScheduleService {
             }
 
             let calendar = Calendar.current
-            let today = Date()
-            let endDate = calendar.date(byAdding: .weekOfYear, value: durationWeeks, to: today)!
+
+            // Support optional start_date for retroactive scheduling
+            let referenceDate: Date
+            if let startDateStr = input["start_date"]?.stringValue,
+               let parsed = dateFormatter.date(from: startDateStr) {
+                referenceDate = parsed
+            } else {
+                referenceDate = Date()
+            }
+            let endDate = calendar.date(byAdding: .weekOfYear, value: durationWeeks, to: referenceDate)!
 
             // Map day names to weekday numbers (Sunday=1 ... Saturday=7)
             let dayMap: [String: Int] = [
@@ -767,12 +778,11 @@ final class AIScheduleService {
 
                 let notes = dict["notes"]?.stringValue
 
-                // Find the next occurrence of this weekday from today
-                let todayWeekday = calendar.component(.weekday, from: today)
-                var daysUntil = targetWeekday - todayWeekday
+                // Find the first occurrence of this weekday from the reference date
+                let refWeekday = calendar.component(.weekday, from: referenceDate)
+                var daysUntil = targetWeekday - refWeekday
                 if daysUntil < 0 { daysUntil += 7 }
-                if daysUntil == 0 { daysUntil = 0 } // today is fine as base
-                let baseDate = calendar.date(byAdding: .day, value: daysUntil, to: today)!
+                let baseDate = calendar.date(byAdding: .day, value: daysUntil, to: referenceDate)!
 
                 changes.append(ScheduleChange(
                     changeType: .addBlock,
