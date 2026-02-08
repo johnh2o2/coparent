@@ -3,17 +3,51 @@ import KVKCalendar
 
 /// Main calendar view with KVKCalendar integration
 struct CalendarView: View {
-    @State private var viewModel = CalendarViewModel()
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var ownViewModel = CalendarViewModel()
+    private var sharedViewModel: CalendarViewModel?
+
+    private var viewModel: CalendarViewModel {
+        sharedViewModel ?? ownViewModel
+    }
+
     @State private var showingViewPicker = false
 
+    init(sharedViewModel: CalendarViewModel? = nil) {
+        self.sharedViewModel = sharedViewModel
+    }
+
+    /// Whether this view is embedded in a NavigationSplitView detail (iPad).
+    /// When true, we skip the inner NavigationStack so the split view's
+    /// sidebar toggle button remains visible and the detail resizes properly.
+    private var isEmbeddedInSplitView: Bool {
+        sharedViewModel != nil
+    }
+
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // Calendar
-                KVKCalendarWrapper(
-                    selectedDate: $viewModel.selectedDate,
-                    calendarType: $viewModel.calendarType,
+        if isEmbeddedInSplitView {
+            calendarContent
+        } else {
+            NavigationStack {
+                calendarContent
+            }
+        }
+    }
+
+    private var calendarContent: some View {
+        ZStack {
+            // Calendar
+            KVKCalendarWrapper(
+                    selectedDate: Binding(
+                        get: { viewModel.selectedDate },
+                        set: { viewModel.selectedDate = $0 }
+                    ),
+                    calendarType: Binding(
+                        get: { viewModel.calendarType },
+                        set: { viewModel.calendarType = $0 }
+                    ),
                     events: viewModel.displayBlocks,
+                    daysInWeek: horizontalSizeClass == .regular ? 7 : 3,
                     onEventTapped: { block in
                         viewModel.openBlockEditor(block)
                     },
@@ -85,7 +119,7 @@ struct CalendarView: View {
                         Button {
                             viewModel.calendarType = .week
                         } label: {
-                            Label("3-Day", systemImage: CalendarType.week.iconName)
+                            Label(horizontalSizeClass == .regular ? "Week" : "3-Day", systemImage: CalendarType.week.iconName)
                         }
                         Button {
                             viewModel.calendarType = .month
@@ -97,15 +131,21 @@ struct CalendarView: View {
                     }
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.isAIAssistantPresented = true
-                    } label: {
-                        Image(systemName: "wand.and.stars")
+                // Only show AI button on iPhone — on iPad it's in the sidebar
+                if horizontalSizeClass != .regular {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            viewModel.isAIAssistantPresented = true
+                        } label: {
+                            Image(systemName: "wand.and.stars")
+                        }
                     }
                 }
             }
-            .sheet(isPresented: $viewModel.isEditorPresented, onDismiss: {
+            .sheet(isPresented: Binding(
+                get: { viewModel.isEditorPresented },
+                set: { viewModel.isEditorPresented = $0 }
+            ), onDismiss: {
                 Task {
                     await viewModel.loadBlocks()
                 }
@@ -133,7 +173,10 @@ struct CalendarView: View {
                     )
                 }
             }
-            .sheet(isPresented: $viewModel.isAIAssistantPresented, onDismiss: {
+            .sheet(isPresented: Binding(
+                get: { viewModel.isAIAssistantPresented },
+                set: { viewModel.isAIAssistantPresented = $0 }
+            ), onDismiss: {
                 Task {
                     await viewModel.loadBlocks()
                 }
@@ -165,7 +208,6 @@ struct CalendarView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
-        }
     }
 
     private var navigationTitle: String {
@@ -176,7 +218,8 @@ struct CalendarView: View {
             formatter.dateFormat = "EEE, MMM d"
         case .week:
             formatter.dateFormat = "MMM d"
-            let endDate = Calendar.current.date(byAdding: .day, value: 2, to: viewModel.selectedDate)!
+            let daysInView = horizontalSizeClass == .regular ? 6 : 2
+            let endDate = Calendar.current.date(byAdding: .day, value: daysInView, to: viewModel.selectedDate)!
             let endFormatter = DateFormatter()
             endFormatter.dateFormat = "d"
             return "\(formatter.string(from: viewModel.selectedDate)) - \(endFormatter.string(from: endDate))"

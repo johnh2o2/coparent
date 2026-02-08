@@ -8,6 +8,7 @@ struct KVKCalendarWrapper: UIViewControllerRepresentable {
     @Binding var selectedDate: Date
     @Binding var calendarType: CalendarType
     var events: [TimeBlock]
+    var daysInWeek: Int = 3
     var onEventTapped: ((TimeBlock) -> Void)?
     var onDateSelected: ((Date) -> Void)?
     var onEventMoved: ((TimeBlock, Date, Int, Int) -> Void)?
@@ -45,6 +46,7 @@ struct KVKCalendarWrapper: UIViewControllerRepresentable {
         let dateChanged = !(context.coordinator.lastSetDate.map {
             Calendar.current.isDate($0, inSameDayAs: selectedDate)
         } ?? false)
+        let daysChanged = context.coordinator.lastSetDaysInWeek != daysInWeek
 
         if typeChanged || dateChanged {
             context.coordinator.lastSetType = calendarType
@@ -52,8 +54,14 @@ struct KVKCalendarWrapper: UIViewControllerRepresentable {
             kvkView.set(type: calendarType, date: selectedDate)
         }
 
+        // Update week days if changed
+        if daysChanged {
+            context.coordinator.lastSetDaysInWeek = daysInWeek
+            uiViewController.updateDaysInWeek(daysInWeek)
+        }
+
         // KVK needs a frame reload after type switches to lay out the new view hierarchy
-        if typeChanged {
+        if typeChanged || daysChanged {
             kvkView.reloadFrame(uiViewController.view.bounds)
         }
 
@@ -78,6 +86,7 @@ struct KVKCalendarWrapper: UIViewControllerRepresentable {
         // and prevent feedback loops from delegate callbacks
         var lastSetType: CalendarType?
         var lastSetDate: Date?
+        var lastSetDaysInWeek: Int?
 
         init(_ parent: KVKCalendarWrapper) {
             self.parent = parent
@@ -305,6 +314,12 @@ class KVKCalendarViewController: UIViewController {
 
     func setCalendarType(_ type: CalendarType, date: Date) {
         calendarView.set(type: type, date: date)
+    }
+
+    func updateDaysInWeek(_ days: Int) {
+        var style = calendarView.style
+        style.week.daysInOneWeek = UInt(days)
+        calendarView.updateStyle(style)
     }
 }
 
