@@ -71,7 +71,7 @@ final class CloudKitService {
     }
 
     private init() {
-        container = CKContainer(identifier: "iCloud.com.johnhoffman.CoParentingTwo")
+        container = CKContainer(identifier: "iCloud.com.johnhoffman.CoParentingAppTwo")
         privateDatabase = container.privateCloudDatabase
         sharedDatabase = container.sharedCloudDatabase
     }
