@@ -64,7 +64,7 @@ struct User: Identifiable, Codable, Equatable {
 // MARK: - CloudKit Integration
 
 extension User {
-    static let recordType = "User"
+    static let recordType = "Users"
 
     enum CloudKitKeys: String {
         case id
