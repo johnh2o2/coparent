@@ -287,6 +287,38 @@ final class SettingsViewModel {
 
         isSyncing = false
     }
+
+    // MARK: - Diagnostics
+
+    var diagnosticContainerID: String { cloudKit.containerIdentifier }
+    var diagnosticZoneStatus: String { cloudKit.zoneStatus }
+    var diagnosticLastOp: String { cloudKit.lastOperationLog }
+    var diagnosticFetchFailures: Int { TimeBlockRepository.shared.consecutiveFetchFailures }
+    var diagnosticLastError: String {
+        TimeBlockRepository.shared.lastFetchError?.localizedDescription ?? "none"
+    }
+    var diagnosticCacheCount: Int { TimeBlockRepository.shared.timeBlocks.count }
+
+    /// Run a full diagnostic check
+    func runDiagnostics() async -> String {
+        var lines: [String] = []
+        lines.append("Container: \(cloudKit.containerIdentifier)")
+        lines.append("Authenticated: \(cloudKit.isAuthenticated)")
+
+        let zoneHealth = await cloudKit.checkZoneHealth()
+        lines.append("Zone: \(zoneHealth)")
+
+        lines.append("Cache: \(TimeBlockRepository.shared.timeBlocks.count) blocks")
+        lines.append("Fetch failures: \(TimeBlockRepository.shared.consecutiveFetchFailures)")
+
+        if let err = TimeBlockRepository.shared.lastFetchError {
+            lines.append("Last error: \(err)")
+        }
+
+        lines.append("Last op: \(cloudKit.lastOperationLog)")
+
+        return lines.joined(separator: "\n")
+    }
 }
 
 // MARK: - Preview Support

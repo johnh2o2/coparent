@@ -58,6 +58,11 @@ final class CloudKitService {
     var currentUserRecordID: CKRecord.ID?
     var syncStatus: SyncStatus = .idle
 
+    // Diagnostics — visible in Settings so TestFlight issues are debuggable
+    var containerIdentifier: String { container.containerIdentifier ?? "unknown" }
+    var zoneStatus: String = "Unknown"
+    var lastOperationLog: String = ""
+
     enum SyncStatus {
         case idle
         case syncing
@@ -108,14 +113,35 @@ final class CloudKitService {
         let zone = CKRecordZone(zoneID: customZoneID)
         do {
             _ = try await privateDatabase.save(zone)
+            zoneStatus = "Ready"
         } catch let error as CKError {
             // Various codes can mean "zone already exists" — that's fine.
             switch error.code {
             case .serverRecordChanged, .resultsTruncated:
+                zoneStatus = "Ready (exists)"
                 break
             default:
+                zoneStatus = "FAILED: \(error.code.rawValue) — \(error.localizedDescription)"
                 throw error
             }
+        }
+    }
+
+    /// Diagnostic: verify the custom zone exists by fetching it
+    func checkZoneHealth() async -> String {
+        do {
+            let zones = try await privateDatabase.allRecordZones()
+            let zoneNames = zones.map { $0.zoneID.zoneName }
+            let hasCustomZone = zoneNames.contains(customZoneName)
+            let status = hasCustomZone
+                ? "OK — zone '\(customZoneName)' found (\(zones.count) total zones)"
+                : "MISSING — zone '\(customZoneName)' not found. Zones: \(zoneNames.joined(separator: ", "))"
+            zoneStatus = status
+            return status
+        } catch {
+            let status = "ERROR checking zones: \(error.localizedDescription)"
+            zoneStatus = status
+            return status
         }
     }
 
@@ -190,18 +216,29 @@ final class CloudKitService {
         query.sortDescriptors = sortDescriptors
 
         var allRecords: [CKRecord] = []
+        var perRecordErrors = 0
 
         do {
             let (results, _) = try await privateDatabase.records(matching: query, inZoneWith: customZoneID, resultsLimit: limit ?? CKQueryOperation.maximumResults)
 
             for (_, result) in results {
-                if case .success(let record) = result {
+                switch result {
+                case .success(let record):
                     allRecords.append(record)
+                case .failure:
+                    perRecordErrors += 1
                 }
             }
 
+            let log = "fetch \(recordType): \(allRecords.count) records" + (perRecordErrors > 0 ? " (\(perRecordErrors) per-record errors)" : "")
+            print("[CloudKitService] \(log)")
+            lastOperationLog = log
+
             return allRecords
         } catch {
+            let log = "fetch \(recordType) FAILED: \(error.localizedDescription)"
+            print("[CloudKitService] \(log)")
+            lastOperationLog = log
             throw mapError(error)
         }
     }
@@ -221,7 +258,8 @@ final class CloudKitService {
     /// Batch save multiple records
     func batchSave(_ records: [CKRecord]) async throws -> [CKRecord] {
         syncStatus = .syncing
-        print("[CloudKitService] batchSave() called for \(records.count) records")
+        let totalCount = records.count
+        print("[CloudKitService] batchSave() called for \(totalCount) records")
 
         // Ensure all records are in the custom zone
         let zoneRecords = records.map { record -> CKRecord in
@@ -235,38 +273,52 @@ final class CloudKitService {
             return zoneRecord
         }
 
-        do {
-            let modifyOperation = CKModifyRecordsOperation(recordsToSave: zoneRecords, recordIDsToDelete: nil)
-            modifyOperation.savePolicy = .changedKeys
-            modifyOperation.qualityOfService = .userInitiated
+        let modifyOperation = CKModifyRecordsOperation(recordsToSave: zoneRecords, recordIDsToDelete: nil)
+        modifyOperation.savePolicy = .allKeys  // Use allKeys for reliability — matches single save()
+        modifyOperation.qualityOfService = .userInitiated
 
-            var savedRecords: [CKRecord] = []
+        var savedRecords: [CKRecord] = []
+        var perRecordErrors: [String] = []
 
-            return try await withCheckedThrowingContinuation { continuation in
-                modifyOperation.modifyRecordsResultBlock = { result in
-                    switch result {
-                    case .success:
-                        print("[CloudKitService] batchSave SUCCESS — saved \(savedRecords.count) records")
+        return try await withCheckedThrowingContinuation { continuation in
+            modifyOperation.perRecordSaveBlock = { recordID, result in
+                switch result {
+                case .success(let record):
+                    savedRecords.append(record)
+                case .failure(let error):
+                    let msg = "Record \(recordID.recordName): \(error.localizedDescription)"
+                    perRecordErrors.append(msg)
+                    print("[CloudKitService] perRecordSave FAILED — \(msg)")
+                }
+            }
+
+            modifyOperation.modifyRecordsResultBlock = { result in
+                switch result {
+                case .success:
+                    let log = "batchSave: \(savedRecords.count)/\(totalCount) saved"
+                        + (perRecordErrors.isEmpty ? "" : ", errors: \(perRecordErrors.joined(separator: "; "))")
+                    print("[CloudKitService] \(log)")
+                    self.lastOperationLog = log
+
+                    if savedRecords.isEmpty && totalCount > 0 {
+                        // Operation "succeeded" but every record failed — treat as error
+                        let errMsg = "All \(totalCount) records failed: \(perRecordErrors.first ?? "unknown")"
+                        self.syncStatus = .error(errMsg)
+                        continuation.resume(throwing: CloudKitError.serverError(errMsg))
+                    } else {
                         self.syncStatus = .synced
                         continuation.resume(returning: savedRecords)
-                    case .failure(let error):
-                        print("[CloudKitService] batchSave FAILED — error: \(error)")
-                        self.syncStatus = .error(error.localizedDescription)
-                        continuation.resume(throwing: self.mapError(error))
                     }
+                case .failure(let error):
+                    let log = "batchSave FAILED: \(error.localizedDescription)"
+                    print("[CloudKitService] \(log)")
+                    self.lastOperationLog = log
+                    self.syncStatus = .error(error.localizedDescription)
+                    continuation.resume(throwing: self.mapError(error))
                 }
-
-                modifyOperation.perRecordSaveBlock = { _, result in
-                    switch result {
-                    case .success(let record):
-                        savedRecords.append(record)
-                    case .failure(let error):
-                        print("[CloudKitService] perRecordSave FAILED — error: \(error)")
-                    }
-                }
-
-                privateDatabase.add(modifyOperation)
             }
+
+            privateDatabase.add(modifyOperation)
         }
     }
 

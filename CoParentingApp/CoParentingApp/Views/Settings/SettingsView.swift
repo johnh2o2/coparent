@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.userProfile) private var userProfile
     @State private var viewModel = SettingsViewModel()
     @State private var showingProfileEditor = false
+    @State private var diagnosticReport: String?
 
     var body: some View {
         NavigationStack {
@@ -227,6 +228,83 @@ struct SettingsView: View {
                     Text("Care Time Window")
                 } footer: {
                     Text("Blocks outside this window are treated as sleep/personal time and won't be scheduled.")
+                }
+
+                // Diagnostics section
+                Section {
+                    HStack {
+                        Text("Container")
+                        Spacer()
+                        Text(viewModel.diagnosticContainerID)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                    }
+
+                    HStack {
+                        Text("Zone")
+                        Spacer()
+                        Text(viewModel.diagnosticZoneStatus)
+                            .font(.caption)
+                            .foregroundStyle(viewModel.diagnosticZoneStatus.hasPrefix("Ready") || viewModel.diagnosticZoneStatus.contains("OK") ? .green : .orange)
+                            .lineLimit(2)
+                    }
+
+                    HStack {
+                        Text("Local Cache")
+                        Spacer()
+                        Text("\(viewModel.diagnosticCacheCount) blocks")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Text("Fetch Failures")
+                        Spacer()
+                        Text("\(viewModel.diagnosticFetchFailures)")
+                            .foregroundStyle(viewModel.diagnosticFetchFailures > 0 ? .red : .green)
+                    }
+
+                    if viewModel.diagnosticFetchFailures > 0 {
+                        HStack {
+                            Text("Last Error")
+                            Spacer()
+                            Text(viewModel.diagnosticLastError)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .lineLimit(3)
+                        }
+                    }
+
+                    if !viewModel.diagnosticLastOp.isEmpty {
+                        HStack {
+                            Text("Last Op")
+                            Spacer()
+                            Text(viewModel.diagnosticLastOp)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(3)
+                        }
+                    }
+
+                    Button {
+                        Task {
+                            diagnosticReport = await viewModel.runDiagnostics()
+                        }
+                    } label: {
+                        Label("Run Diagnostics", systemImage: "stethoscope")
+                    }
+
+                    if let report = diagnosticReport {
+                        Text(report)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+                } header: {
+                    Text("Diagnostics")
+                } footer: {
+                    Text("Debug info for troubleshooting CloudKit sync issues.")
                 }
 
                 // About section

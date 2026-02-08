@@ -260,13 +260,17 @@ final class TimeBlockRepository {
             let records = clampedBlocks.map { $0.toRecord(recordID: recordIDMapping[$0.id]) }
             let savedRecords = try await cloudKit.batchSave(records)
 
+            if savedRecords.count < clampedBlocks.count {
+                print("[TimeBlockRepository] ⚠️ saveAll: only \(savedRecords.count)/\(clampedBlocks.count) records saved to CloudKit")
+            }
+
             let savedBlocks = savedRecords.compactMap { record -> TimeBlock? in
                 guard let block = TimeBlock(from: record) else { return nil }
                 recordIDMapping[block.id] = record.recordID
                 return block
             }
 
-            // Update cache
+            // Update cache with saved blocks
             for block in savedBlocks {
                 if let index = timeBlocks.firstIndex(where: { $0.id == block.id }) {
                     timeBlocks[index] = block
@@ -278,6 +282,7 @@ final class TimeBlockRepository {
 
             return savedBlocks
         } catch {
+            print("[TimeBlockRepository] saveAll FAILED: \(error.localizedDescription)")
             self.error = error
             throw error
         }
