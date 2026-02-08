@@ -28,6 +28,13 @@ final class TimeBlockRepository {
     var isLoading = false
     var error: Error?
 
+    /// Tracks consecutive CloudKit fetch failures. Resets to 0 on success.
+    /// A high count (e.g. > 3) suggests a persistent issue like missing
+    /// queryable indexes rather than a transient network hiccup.
+    private(set) var consecutiveFetchFailures = 0
+    /// The last CloudKit fetch error, if any. Nil when fetches succeed.
+    private(set) var lastFetchError: Error?
+
     init(cloudKit: CloudKitService = .shared) {
         self.cloudKit = cloudKit
     }
@@ -107,13 +114,43 @@ final class TimeBlockRepository {
             // Update cache
             self.timeBlocks = mergeBlocks(existing: timeBlocks, fetched: blocks)
 
+            // CloudKit query succeeded — clear failure tracking
+            consecutiveFetchFailures = 0
+            lastFetchError = nil
+
             return blocks
         } catch {
-            // CloudKit query failed (e.g. record type doesn't exist yet).
-            // Return empty so the calendar shows no blocks but no error.
-            // The schema gets auto-created on the first save.
-            print("[TimeBlockRepository] CloudKit fetch failed: \(error.localizedDescription)")
-            return []
+            // Track consecutive failures to distinguish transient (network)
+            // from persistent (missing indexes, schema not deployed) issues.
+            consecutiveFetchFailures += 1
+            lastFetchError = error
+
+            let ckDetail: String
+            if let ckError = error as? CloudKitError {
+                ckDetail = "CloudKitError.\(ckError)"
+            } else {
+                ckDetail = "\(error)"
+            }
+            print("[TimeBlockRepository] CloudKit fetch FAILED (\(consecutiveFetchFailures) consecutive). Error: \(ckDetail)")
+
+            if consecutiveFetchFailures >= 3 {
+                print("[TimeBlockRepository] ⚠️ PERSISTENT FAILURE — CloudKit queries have failed \(consecutiveFetchFailures) times in a row.")
+                print("[TimeBlockRepository] This likely means the CloudKit schema is missing queryable indexes.")
+                print("[TimeBlockRepository] Go to https://icloud.developer.apple.com → select your container → Schema → Indexes")
+                print("[TimeBlockRepository] Ensure 'date', 'recurrenceType', 'startSlot' on TimeBlock are marked Queryable + Sortable.")
+            }
+
+            // Fall back to local cache so the UI isn't empty, but the
+            // failure state is tracked and can be surfaced by the UI.
+            let rangeStart = Calendar.current.startOfDay(for: startDate)
+            let rangeEnd = Calendar.current.startOfDay(for: endDate)
+            return timeBlocks.filter { block in
+                if block.recurrenceType != .none {
+                    return block.date <= rangeEnd &&
+                        (block.recurrenceEndDate == nil || block.recurrenceEndDate! >= rangeStart)
+                }
+                return block.date >= rangeStart && block.date <= rangeEnd
+            }
         }
     }
 

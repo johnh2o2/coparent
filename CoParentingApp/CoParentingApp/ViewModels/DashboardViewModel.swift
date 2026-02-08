@@ -41,7 +41,7 @@ final class DashboardViewModel {
 
     private func loadYearBalance() async {
         let calendar = Calendar.current
-        let today = Date()
+        let today = calendar.startOfDay(for: Date())
         let yearEnd = calendar.date(byAdding: .weekOfYear, value: 52, to: today)!
 
         do {
