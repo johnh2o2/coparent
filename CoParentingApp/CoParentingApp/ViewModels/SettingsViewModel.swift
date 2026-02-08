@@ -55,7 +55,13 @@ final class SettingsViewModel {
         do {
             try await cloudKit.setup()
             isCloudKitEnabled = cloudKit.isAuthenticated
-            cloudKitStatus = "Connected"
+
+            let repo = TimeBlockRepository.shared
+            if repo.consecutiveFetchFailures > 0 {
+                cloudKitStatus = "Queries failing (\(repo.consecutiveFetchFailures)x)"
+            } else {
+                cloudKitStatus = "Connected"
+            }
 
             // Try to fetch current user profile
             await loadUserProfile()
@@ -113,32 +119,34 @@ final class SettingsViewModel {
 
     // MARK: - Family Sharing
 
-    /// Create a share invitation
+    /// Create a share invitation using zone-wide sharing so all schedule
+    /// data (blocks, messages, etc.) is accessible to the co-parent.
     func createShareInvitation() async {
         isLoading = true
         errorMessage = nil
 
-        guard let user = currentUser else {
+        guard currentUser != nil else {
             errorMessage = "Please create your profile first"
             isLoading = false
             return
         }
 
         do {
-            // Create a "family" record to share, including provider names
+            // Save a Family record with provider names so the recipient can
+            // pick up naming conventions. This record lives in the shared zone
+            // and will be accessible once the share is accepted.
             let familyRecord = CKRecord(recordType: "Family")
             familyRecord["name"] = "Our Family Schedule"
-            familyRecord["createdBy"] = user.id.uuidString
-
-            // Include provider names so the share recipient gets them
             let profile = UserProfileManager.shared
             familyRecord["parentAName"] = profile.providerNames[.parentA] ?? "Caregiver 1"
             familyRecord["parentBName"] = profile.providerNames[.parentB] ?? "Caregiver 2"
             familyRecord["nannyName"] = profile.providerNames[.nanny] ?? "Nanny"
+            let _ = try await cloudKit.save(familyRecord)
 
-            let share = try await cloudKit.createShare(for: familyRecord, title: "Co-Parenting Schedule")
+            // Create a zone-wide share — this gives the co-parent access
+            // to ALL records in the zone (schedules, messages, etc.)
+            let share = try await cloudKit.createZoneShare(title: "Co-Parenting Schedule")
 
-            // Get share URL
             shareURL = share.url
             isShareSheetPresented = true
 
@@ -259,6 +267,20 @@ final class SettingsViewModel {
             try await cloudKit.setup()
             await loadUserProfile()
             await loadFamilyMembers()
+
+            // Run a diagnostic fetch to exercise the CloudKit query path
+            // and check whether queries are working.
+            let repo = TimeBlockRepository.shared
+            let calendar = Calendar.current
+            let today = calendar.startOfDay(for: Date())
+            let weekEnd = calendar.date(byAdding: .day, value: 7, to: today)!
+            let _ = try await repo.fetchBlocks(from: today, to: weekEnd)
+
+            if repo.consecutiveFetchFailures > 0 {
+                cloudKitStatus = "Queries failing (\(repo.consecutiveFetchFailures)x)"
+            } else {
+                cloudKitStatus = "Connected"
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

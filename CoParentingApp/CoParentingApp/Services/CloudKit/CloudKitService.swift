@@ -66,7 +66,7 @@ final class CloudKitService {
     }
 
     private init() {
-        container = CKContainer(identifier: "iCloud.com.johnhoffman.CoParenting")
+        container = CKContainer(identifier: "iCloud.com.johnhoffman.CoParentingTwo")
         privateDatabase = container.privateCloudDatabase
         sharedDatabase = container.sharedCloudDatabase
     }
@@ -263,15 +263,48 @@ final class CloudKitService {
 
     // MARK: - Sharing
 
-    /// Create a share for inviting a co-parent
-    func createShare(for rootRecord: CKRecord, title: String) async throws -> CKShare {
-        let share = CKShare(rootRecord: rootRecord)
+    /// Create a zone-wide share for inviting a co-parent.
+    /// This shares ALL records in the custom zone (schedules, messages, etc.).
+    func createZoneShare(title: String) async throws -> CKShare {
+        syncStatus = .syncing
+
+        let share = CKShare(recordZoneID: customZoneID)
         share[CKShare.SystemFieldKey.title] = title
         share.publicPermission = .none
 
-        let _ = try await batchSave([rootRecord, share])
+        let operation = CKModifyRecordsOperation(recordsToSave: [share], recordIDsToDelete: nil)
+        operation.savePolicy = .allKeys
+        operation.qualityOfService = .userInitiated
 
-        return share
+        return try await withCheckedThrowingContinuation { continuation in
+            var savedShare: CKShare?
+
+            operation.perRecordSaveBlock = { _, result in
+                if case .success(let record) = result, let s = record as? CKShare {
+                    savedShare = s
+                }
+            }
+
+            operation.modifyRecordsResultBlock = { result in
+                switch result {
+                case .success:
+                    if let s = savedShare {
+                        print("[CloudKitService] Zone share created — URL: \(s.url?.absoluteString ?? "nil")")
+                        self.syncStatus = .synced
+                        continuation.resume(returning: s)
+                    } else {
+                        self.syncStatus = .error("No share returned")
+                        continuation.resume(throwing: CloudKitError.unknown(NSError(domain: "CloudKit", code: -1)))
+                    }
+                case .failure(let error):
+                    print("[CloudKitService] Zone share FAILED — \(error)")
+                    self.syncStatus = .error(error.localizedDescription)
+                    continuation.resume(throwing: self.mapError(error))
+                }
+            }
+
+            privateDatabase.add(operation)
+        }
     }
 
     /// Accept a share invitation

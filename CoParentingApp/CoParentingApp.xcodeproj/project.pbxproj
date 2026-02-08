@@ -53,6 +53,8 @@
 		A10000010000000000000043 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000043 /* DashboardViewModel.swift */; };
 		A10000010000000000000044 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000044 /* DashboardView.swift */; };
 		A10000010000000000000045 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000045 /* Haptics.swift */; };
+		A10000010000000000000046 /* DashboardCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000046 /* DashboardCards.swift */; };
+		A10000010000000000000047 /* iPadSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000047 /* iPadSidebarView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -103,6 +105,8 @@
 		A20000010000000000000043 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		A20000010000000000000044 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		A20000010000000000000045 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		A20000010000000000000046 /* DashboardCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCards.swift; sourceTree = "<group>"; };
+		A20000010000000000000047 /* iPadSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iPadSidebarView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -254,6 +258,7 @@
 				A50000010000000000000016 /* Summary */,
 				A50000010000000000000017 /* Settings */,
 				A50000010000000000000019 /* AI */,
+				A50000010000000000000022 /* iPad */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -327,8 +332,17 @@
 			isa = PBXGroup;
 			children = (
 				A20000010000000000000044 /* DashboardView.swift */,
+				A20000010000000000000046 /* DashboardCards.swift */,
 			);
 			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000022 /* iPad */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000047 /* iPadSidebarView.swift */,
+			);
+			path = iPad;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -450,6 +464,8 @@
 				A10000010000000000000043 /* DashboardViewModel.swift in Sources */,
 				A10000010000000000000044 /* DashboardView.swift in Sources */,
 				A10000010000000000000045 /* Haptics.swift in Sources */,
+				A10000010000000000000046 /* DashboardCards.swift in Sources */,
+				A10000010000000000000047 /* iPadSidebarView.swift in Sources */,
 				3EB64505A7DAEA96BBA3DE29 /* UserProfileManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -584,7 +600,7 @@
 				CODE_SIGN_ENTITLEMENTS = CoParentingApp/Resources/CoParentingApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = DMG3FT2G47;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -620,7 +636,7 @@
 				CODE_SIGN_ENTITLEMENTS = CoParentingApp/Resources/CoParentingApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = DMG3FT2G47;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
