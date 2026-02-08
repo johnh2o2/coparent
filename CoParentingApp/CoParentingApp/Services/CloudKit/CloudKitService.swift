@@ -79,11 +79,11 @@ final class CloudKitService {
 
         switch accountStatus {
         case .available:
-            isAuthenticated = true
-            // Zone creation is best-effort — the zone may already exist
-            // and various CKError codes can signal that.
+            // Create the custom zone BEFORE setting isAuthenticated so that
+            // views don't start querying CloudKit before the zone exists.
             do {
                 try await createCustomZoneIfNeeded()
+                print("[CloudKit] Zone ready")
             } catch {
                 print("[CloudKit] Zone creation failed (may already exist): \(error.localizedDescription)")
             }
@@ -92,6 +92,9 @@ final class CloudKitService {
             } catch {
                 print("[CloudKit] Could not fetch user record ID: \(error.localizedDescription)")
             }
+            // Set authenticated last — views observe this to decide whether
+            // to hit CloudKit, so the zone must exist first.
+            isAuthenticated = true
         case .noAccount:
             throw CloudKitError.notAuthenticated
         case .restricted, .couldNotDetermine, .temporarilyUnavailable:
@@ -105,8 +108,14 @@ final class CloudKitService {
         let zone = CKRecordZone(zoneID: customZoneID)
         do {
             _ = try await privateDatabase.save(zone)
-        } catch let error as CKError where error.code == .serverRecordChanged {
-            // Zone already exists, which is fine
+        } catch let error as CKError {
+            // Various codes can mean "zone already exists" — that's fine.
+            switch error.code {
+            case .serverRecordChanged, .resultsTruncated:
+                break
+            default:
+                throw error
+            }
         }
     }
 
