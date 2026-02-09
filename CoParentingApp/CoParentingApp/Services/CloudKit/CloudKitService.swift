@@ -58,6 +58,9 @@ final class CloudKitService {
     var currentUserRecordID: CKRecord.ID?
     var syncStatus: SyncStatus = .idle
 
+    // Expose for diagnostics (test queries against specific zones)
+    var privateDB: CKDatabase { privateDatabase }
+
     // Diagnostics — visible in Settings so TestFlight issues are debuggable
     var containerIdentifier: String { container.containerIdentifier ?? "unknown" }
     var zoneStatus: String = "Unknown"
@@ -240,6 +243,35 @@ final class CloudKitService {
             print("[CloudKitService] \(log)")
             lastOperationLog = log
             throw mapError(error)
+        }
+    }
+
+    /// Query using CKQueryOperation directly (diagnostic alternative to convenience API)
+    func queryViaOperation(recordType: String, predicate: NSPredicate) async throws -> Int {
+        let query = CKQuery(recordType: recordType, predicate: predicate)
+        let operation = CKQueryOperation(query: query)
+        operation.zoneID = customZoneID
+        operation.qualityOfService = .userInitiated
+
+        return try await withCheckedThrowingContinuation { continuation in
+            var count = 0
+
+            operation.recordMatchedBlock = { _, result in
+                if case .success = result {
+                    count += 1
+                }
+            }
+
+            operation.queryResultBlock = { result in
+                switch result {
+                case .success:
+                    continuation.resume(returning: count)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+
+            self.privateDatabase.add(operation)
         }
     }
 

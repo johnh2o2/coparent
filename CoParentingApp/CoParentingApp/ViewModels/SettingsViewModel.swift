@@ -320,7 +320,7 @@ final class SettingsViewModel {
         return lines.joined(separator: "\n")
     }
 
-    /// Save a test TimeBlock, fetch it back, then delete it.
+    /// Save a test TimeBlock, fetch it back, query it, then delete it.
     /// Proves the full CloudKit round-trip works in the current environment.
     func runSaveTest() async -> String {
         var lines: [String] = []
@@ -336,21 +336,64 @@ final class SettingsViewModel {
         do {
             let record = testBlock.toRecord()
             let saved = try await cloudKit.save(record)
-            lines.append("1. SAVE: OK (id: \(saved.recordID.recordName))")
+            let zone = saved.recordID.zoneID.zoneName
+            lines.append("1. SAVE: OK")
+            lines.append("   id: \(saved.recordID.recordName)")
+            lines.append("   zone: \(zone)")
 
             // Step 2: Fetch by ID
             do {
                 let fetched = try await cloudKit.fetch(recordID: saved.recordID)
+                let fetchZone = fetched.recordID.zoneID.zoneName
                 if let _ = TimeBlock(from: fetched) {
-                    lines.append("2. FETCH BY ID: OK")
+                    lines.append("2. FETCH BY ID: OK (zone: \(fetchZone))")
                 } else {
-                    lines.append("2. FETCH BY ID: PARTIAL — found but failed to parse")
+                    lines.append("2. FETCH BY ID: PARTIAL — found but failed to parse (zone: \(fetchZone))")
                 }
             } catch {
                 lines.append("2. FETCH BY ID: FAILED — \(error.localizedDescription)")
             }
 
-            // Step 3: Query by date (BEFORE delete so the test record should be found)
+            // Step 3: Wait for index propagation then query
+            lines.append("3. Waiting 5s for index propagation...")
+            try? await Task.sleep(for: .seconds(5))
+
+            // Step 3a: Query ALL TimeBlocks via convenience API (custom zone)
+            do {
+                let allResults = try await cloudKit.fetchRecords(
+                    recordType: TimeBlock.recordType,
+                    predicate: NSPredicate(value: true)
+                )
+                lines.append("3a. QUERY ALL (custom zone): \(allResults.count) record(s)")
+            } catch {
+                lines.append("3a. QUERY ALL (custom zone): FAILED — \(error.localizedDescription)")
+            }
+
+            // Step 3b: Query ALL TimeBlocks in DEFAULT zone
+            do {
+                let query = CKQuery(recordType: TimeBlock.recordType, predicate: NSPredicate(value: true))
+                let (results, _) = try await cloudKit.privateDB.records(
+                    matching: query,
+                    inZoneWith: CKRecordZone.default().zoneID,
+                    resultsLimit: CKQueryOperation.maximumResults
+                )
+                lines.append("3b. QUERY ALL (default zone): \(results.count) record(s)")
+            } catch {
+                lines.append("3b. QUERY ALL (default zone): FAILED — \(error.localizedDescription)")
+            }
+
+            // Step 3c: Query via CKQueryOperation directly (custom zone)
+            do {
+                let count = try await cloudKit.queryViaOperation(
+                    recordType: TimeBlock.recordType,
+                    predicate: NSPredicate(value: true)
+                )
+                lines.append("3c. CKQueryOperation (custom zone): \(count) record(s)")
+            } catch {
+                lines.append("3c. CKQueryOperation (custom zone): FAILED — \(error.localizedDescription)")
+            }
+
+            // Step 3d: Query by date predicate
             do {
                 let calendar = Calendar.current
                 let today = calendar.startOfDay(for: Date())
@@ -359,26 +402,22 @@ final class SettingsViewModel {
                     recordType: TimeBlock.recordType,
                     predicate: NSPredicate(format: "date >= %@ AND date <= %@", today as NSDate, tomorrow as NSDate)
                 )
-                if results.count > 0 {
-                    lines.append("3. QUERY: OK — found \(results.count) record(s) for today")
-                } else {
-                    lines.append("3. QUERY: FAILED — 0 records (expected at least 1). Check 'date' field is Queryable in Production indexes.")
-                }
+                lines.append("3d. QUERY BY DATE: \(results.count) record(s)")
             } catch {
-                lines.append("3. QUERY: FAILED — \(error.localizedDescription)")
+                lines.append("3d. QUERY BY DATE: FAILED — \(error.localizedDescription)")
             }
 
             // Step 4: Delete (cleanup)
             do {
                 try await cloudKit.delete(recordID: saved.recordID)
-                lines.append("4. DELETE: OK — test record cleaned up")
+                lines.append("4. DELETE: OK")
             } catch {
                 lines.append("4. DELETE: FAILED — \(error.localizedDescription)")
             }
 
         } catch {
             lines.append("1. SAVE: FAILED — \(error.localizedDescription)")
-            lines.append("   This is the root problem. Data cannot be written to CloudKit Production.")
+            lines.append("   Root problem: data cannot be written to CloudKit.")
         }
 
         lines.append("")
