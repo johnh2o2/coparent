@@ -43,7 +43,9 @@ final class ScheduleChangeRepository {
         }
 
         do {
-            let predicate = NSPredicate(value: true)
+            // Avoid TRUEPREDICATE — CloudKit Production requires recordName
+            // to be Queryable for that. Use a concrete predicate instead.
+            let predicate = NSPredicate(format: "timestamp > %@", Date.distantPast as NSDate)
             let sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
 
             let records = try await cloudKit.fetchRecords(

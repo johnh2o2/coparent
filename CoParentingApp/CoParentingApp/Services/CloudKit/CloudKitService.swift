@@ -211,7 +211,7 @@ final class CloudKitService {
     /// Fetch multiple records by type with optional predicate
     func fetchRecords(
         recordType: String,
-        predicate: NSPredicate = NSPredicate(value: true),
+        predicate: NSPredicate = NSPredicate(format: "creationDate > %@", Date.distantPast as NSDate),
         sortDescriptors: [NSSortDescriptor]? = nil,
         limit: Int? = nil
     ) async throws -> [CKRecord] {
@@ -407,7 +407,9 @@ final class CloudKitService {
 
     /// Fetch shared records
     func fetchSharedRecords(recordType: String) async throws -> [CKRecord] {
-        let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
+        // Use creationDate instead of TRUEPREDICATE — CloudKit Production
+        // requires recordName to be Queryable for NSPredicate(value: true).
+        let query = CKQuery(recordType: recordType, predicate: NSPredicate(format: "creationDate > %@", Date.distantPast as NSDate))
 
         var allRecords: [CKRecord] = []
 
@@ -449,7 +451,7 @@ final class CloudKitService {
             }
 
             // Also check private User records for claimed roles
-            let privateRecords = try await fetchRecords(recordType: User.recordType)
+            let privateRecords = try await fetchRecords(recordType: User.recordType, predicate: NSPredicate(format: "createdAt > %@", Date.distantPast as NSDate))
             for record in privateRecords {
                 if let user = User(from: record) {
                     claimedRoles[user.role] = user.displayName
@@ -473,7 +475,7 @@ final class CloudKitService {
             let subscriptionID = "\(recordType)Changes"
             let subscription = CKQuerySubscription(
                 recordType: recordType,
-                predicate: NSPredicate(value: true),
+                predicate: NSPredicate(format: "creationDate > %@", Date.distantPast as NSDate),
                 subscriptionID: subscriptionID,
                 options: [.firesOnRecordCreation, .firesOnRecordUpdate, .firesOnRecordDeletion]
             )

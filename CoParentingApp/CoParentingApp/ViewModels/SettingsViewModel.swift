@@ -166,8 +166,8 @@ final class SettingsViewModel {
             let sharedRecords = try await cloudKit.fetchSharedRecords(recordType: User.recordType)
             let sharedUsers = sharedRecords.compactMap { User(from: $0) }
 
-            // Fetch users from private database
-            let privateRecords = try await cloudKit.fetchRecords(recordType: User.recordType)
+            // Fetch users from private database (avoid TRUEPREDICATE — not supported in Production)
+            let privateRecords = try await cloudKit.fetchRecords(recordType: User.recordType, predicate: NSPredicate(format: "createdAt > %@", Date.distantPast as NSDate))
             let privateUsers = privateRecords.compactMap { User(from: $0) }
 
             // Combine and deduplicate
