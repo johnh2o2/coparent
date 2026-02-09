@@ -320,8 +320,9 @@ final class TimeBlockRepository {
 
     // MARK: - Overlap Resolution
 
-    /// Remove existing blocks that overlap with the incoming blocks.
-    /// Handles recurring blocks by checking if they apply to the same day.
+    /// Remove existing non-recurring blocks that overlap with the incoming blocks.
+    /// Recurring blocks are NEVER deleted here — they are suppressed at display
+    /// time by `expandRecurringBlocks` when a non-recurring override exists.
     /// Returns the list of blocks that were removed.
     @discardableResult
     func removeOverlapping(with incomingBlocks: [TimeBlock]) async throws -> [TimeBlock] {
@@ -332,21 +333,17 @@ final class TimeBlockRepository {
             guard incoming.isValid else { continue }
             let incomingDay = calendar.startOfDay(for: incoming.date)
 
-            // Find existing blocks that occupy overlapping slots on the same effective day
+            // Find existing NON-RECURRING blocks that occupy overlapping slots on the same day
             let overlapping = timeBlocks.filter { existing in
                 // Don't conflict with itself
                 guard existing.id != incoming.id else { return false }
 
-                // Check if the existing block applies to the same day
-                let appliesToSameDay: Bool
-                if calendar.isDate(existing.date, inSameDayAs: incomingDay) {
-                    appliesToSameDay = true
-                } else if existing.recurrenceType != .none {
-                    appliesToSameDay = existing.matchesRecurrence(on: incomingDay)
-                } else {
-                    appliesToSameDay = false
-                }
-                guard appliesToSameDay else { return false }
+                // Skip recurring blocks — they are templates and must not be deleted
+                // for single-day overrides. The display layer suppresses them instead.
+                guard existing.recurrenceType == .none else { return false }
+
+                // Check if the existing block is on the same day
+                guard calendar.isDate(existing.date, inSameDayAs: incomingDay) else { return false }
 
                 // Check slot overlap
                 return incoming.startSlot < existing.endSlot && incoming.endSlot > existing.startSlot

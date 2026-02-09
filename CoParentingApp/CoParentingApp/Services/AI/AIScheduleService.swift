@@ -318,8 +318,10 @@ final class AIScheduleService {
         When the user asks to set up a schedule for specific dates (not recurring):
         1. Call `clear_day` then `set_day_schedule` for each day.
 
-        SINGLE-DAY OVERRIDES:
-        1. Call `clear_day` for that date, then `set_day_schedule` with replacement blocks (NOT recurring).
+        SINGLE-DAY OVERRIDES (e.g. "I'm taking her all day Tuesday"):
+        Use `set_day_schedule` with the replacement blocks for that date (NOT recurring).
+        Do NOT use `clear_day` with clear_recurring=true — the recurring schedule must survive.
+        The app automatically suppresses recurring blocks when a non-recurring override exists for the same time slot on that day. The recurring schedule resumes on all other days.
 
         For simple single-block changes, use: change_time, add_block, remove_block, or swap_days.
 
@@ -424,7 +426,7 @@ final class AIScheduleService {
             ),
             MessageParameter.Tool(
                 name: "clear_day",
-                description: "Remove all schedule blocks for a specific day. Optionally filter by provider. Use before set_day_schedule to replace a day's schedule. Set clear_recurring to true to also remove recurring blocks whose day-of-week matches.",
+                description: "Remove non-recurring schedule blocks for a specific day. Optionally filter by provider. WARNING: Only set clear_recurring=true when permanently changing the weekly pattern — never for single-day overrides, as it deletes the recurring template for ALL future weeks.",
                 inputSchema: .init(
                     type: .object,
                     properties: [

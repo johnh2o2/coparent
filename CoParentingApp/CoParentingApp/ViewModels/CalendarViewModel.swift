@@ -68,20 +68,30 @@ final class CalendarViewModel {
 
     /// Expand recurring template blocks into concrete per-day instances for the
     /// given date range.  Non-recurring blocks pass through as-is.
+    ///
+    /// When a non-recurring block exists on a given day, any recurring instances
+    /// that overlap with it are suppressed.  This allows single-day overrides
+    /// without permanently deleting the recurring template.
     static func expandRecurringBlocks(_ blocks: [TimeBlock], from rangeStart: Date, to rangeEnd: Date) -> [TimeBlock] {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: rangeStart)
         let end = calendar.startOfDay(for: rangeEnd)
-        var result: [TimeBlock] = []
+
+        // Collect non-recurring blocks first — these take priority
+        let nonRecurring = blocks.filter { $0.recurrenceType == .none }
+
+        // Index non-recurring blocks by day for fast overlap lookup
+        var overridesByDay: [Date: [TimeBlock]] = [:]
+        for block in nonRecurring {
+            let day = calendar.startOfDay(for: block.date)
+            overridesByDay[day, default: []].append(block)
+        }
+
+        var result: [TimeBlock] = nonRecurring
 
         for block in blocks {
-            if block.recurrenceType == .none {
-                result.append(block)
-                continue
-            }
+            guard block.recurrenceType != .none else { continue }
 
-            // For recurring templates, generate a concrete instance for every
-            // matching date in the display range.
             let effectiveEnd: Date
             if let recEnd = block.recurrenceEndDate {
                 effectiveEnd = min(calendar.startOfDay(for: recEnd), end)
@@ -89,15 +99,22 @@ final class CalendarViewModel {
                 effectiveEnd = end
             }
 
-            // Walk dates from the block's base date (or rangeStart, whichever is later)
             let baseDay = calendar.startOfDay(for: block.date)
             var cursor = baseDay < start ? start : baseDay
 
             while cursor <= effectiveEnd {
                 if block.matchesRecurrence(on: cursor) {
-                    var instance = block
-                    instance.date = cursor
-                    result.append(instance)
+                    // Check if a non-recurring override on this day overlaps this slot range
+                    let dayOverrides = overridesByDay[cursor] ?? []
+                    let isOverridden = dayOverrides.contains { override in
+                        override.startSlot < block.endSlot && override.endSlot > block.startSlot
+                    }
+
+                    if !isOverridden {
+                        var instance = block
+                        instance.date = cursor
+                        result.append(instance)
+                    }
                 }
                 guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
                 cursor = next
