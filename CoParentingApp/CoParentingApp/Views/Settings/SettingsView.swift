@@ -6,6 +6,7 @@ struct SettingsView: View {
     @State private var viewModel = SettingsViewModel()
     @State private var showingProfileEditor = false
     @State private var diagnosticReport: String?
+    @State private var saveTestReport: String?
 
     var body: some View {
         NavigationStack {
@@ -295,10 +296,26 @@ struct SettingsView: View {
                         Label("Run Diagnostics", systemImage: "stethoscope")
                     }
 
+                    Button {
+                        Task {
+                            saveTestReport = "Running..."
+                            saveTestReport = await viewModel.runSaveTest()
+                        }
+                    } label: {
+                        Label("Test Save→Fetch→Delete", systemImage: "checkmark.shield")
+                    }
+
                     if let report = diagnosticReport {
                         Text(report)
                             .font(.caption.monospaced())
                             .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+
+                    if let report = saveTestReport {
+                        Text(report)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(report.contains("FAILED") ? .red : .green)
                             .textSelection(.enabled)
                     }
                 } header: {

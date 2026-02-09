@@ -319,6 +319,70 @@ final class SettingsViewModel {
 
         return lines.joined(separator: "\n")
     }
+
+    /// Save a test TimeBlock, fetch it back, then delete it.
+    /// Proves the full CloudKit round-trip works in the current environment.
+    func runSaveTest() async -> String {
+        var lines: [String] = []
+        let testBlock = TimeBlock(
+            date: Date(),
+            startSlot: 32,
+            endSlot: 36,
+            provider: .parentA,
+            notes: "DIAGNOSTIC TEST — safe to delete"
+        )
+
+        // Step 1: Save
+        do {
+            let record = testBlock.toRecord()
+            let saved = try await cloudKit.save(record)
+            lines.append("1. SAVE: OK (id: \(saved.recordID.recordName))")
+
+            // Step 2: Fetch
+            do {
+                let fetched = try await cloudKit.fetch(recordID: saved.recordID)
+                if let _ = TimeBlock(from: fetched) {
+                    lines.append("2. FETCH: OK — record found and parsed")
+                } else {
+                    lines.append("2. FETCH: PARTIAL — record found but failed to parse as TimeBlock")
+                }
+            } catch {
+                lines.append("2. FETCH: FAILED — \(error.localizedDescription)")
+            }
+
+            // Step 3: Delete
+            do {
+                try await cloudKit.delete(recordID: saved.recordID)
+                lines.append("3. DELETE: OK — test record cleaned up")
+            } catch {
+                lines.append("3. DELETE: FAILED — \(error.localizedDescription)")
+                lines.append("   (test record may remain in CloudKit)")
+            }
+
+            // Step 4: Query
+            do {
+                let calendar = Calendar.current
+                let today = calendar.startOfDay(for: Date())
+                let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
+                let results = try await cloudKit.fetchRecords(
+                    recordType: TimeBlock.recordType,
+                    predicate: NSPredicate(format: "date >= %@ AND date <= %@", today as NSDate, tomorrow as NSDate)
+                )
+                lines.append("4. QUERY: OK — \(results.count) TimeBlocks for today")
+            } catch {
+                lines.append("4. QUERY: FAILED — \(error.localizedDescription)")
+            }
+
+        } catch {
+            lines.append("1. SAVE: FAILED — \(error.localizedDescription)")
+            lines.append("   This is the root problem. Data cannot be written to CloudKit Production.")
+        }
+
+        lines.append("")
+        lines.append("Round-trip \(lines.first?.contains("FAILED") == true ? "FAILED" : "PASSED")")
+
+        return lines.joined(separator: "\n")
+    }
 }
 
 // MARK: - Preview Support
