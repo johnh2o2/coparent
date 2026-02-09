@@ -338,28 +338,19 @@ final class SettingsViewModel {
             let saved = try await cloudKit.save(record)
             lines.append("1. SAVE: OK (id: \(saved.recordID.recordName))")
 
-            // Step 2: Fetch
+            // Step 2: Fetch by ID
             do {
                 let fetched = try await cloudKit.fetch(recordID: saved.recordID)
                 if let _ = TimeBlock(from: fetched) {
-                    lines.append("2. FETCH: OK — record found and parsed")
+                    lines.append("2. FETCH BY ID: OK")
                 } else {
-                    lines.append("2. FETCH: PARTIAL — record found but failed to parse as TimeBlock")
+                    lines.append("2. FETCH BY ID: PARTIAL — found but failed to parse")
                 }
             } catch {
-                lines.append("2. FETCH: FAILED — \(error.localizedDescription)")
+                lines.append("2. FETCH BY ID: FAILED — \(error.localizedDescription)")
             }
 
-            // Step 3: Delete
-            do {
-                try await cloudKit.delete(recordID: saved.recordID)
-                lines.append("3. DELETE: OK — test record cleaned up")
-            } catch {
-                lines.append("3. DELETE: FAILED — \(error.localizedDescription)")
-                lines.append("   (test record may remain in CloudKit)")
-            }
-
-            // Step 4: Query
+            // Step 3: Query by date (BEFORE delete so the test record should be found)
             do {
                 let calendar = Calendar.current
                 let today = calendar.startOfDay(for: Date())
@@ -368,9 +359,21 @@ final class SettingsViewModel {
                     recordType: TimeBlock.recordType,
                     predicate: NSPredicate(format: "date >= %@ AND date <= %@", today as NSDate, tomorrow as NSDate)
                 )
-                lines.append("4. QUERY: OK — \(results.count) TimeBlocks for today")
+                if results.count > 0 {
+                    lines.append("3. QUERY: OK — found \(results.count) record(s) for today")
+                } else {
+                    lines.append("3. QUERY: FAILED — 0 records (expected at least 1). Check 'date' field is Queryable in Production indexes.")
+                }
             } catch {
-                lines.append("4. QUERY: FAILED — \(error.localizedDescription)")
+                lines.append("3. QUERY: FAILED — \(error.localizedDescription)")
+            }
+
+            // Step 4: Delete (cleanup)
+            do {
+                try await cloudKit.delete(recordID: saved.recordID)
+                lines.append("4. DELETE: OK — test record cleaned up")
+            } catch {
+                lines.append("4. DELETE: FAILED — \(error.localizedDescription)")
             }
 
         } catch {
