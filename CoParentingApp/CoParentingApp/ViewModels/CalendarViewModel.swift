@@ -299,55 +299,98 @@ final class CalendarViewModel {
         }
     }
 
-    /// Apply all changes in a batch.
-    func applyBatch(_ batch: ScheduleChangeBatch) async {
+    /// Apply all changes in a batch, tracking per-operation results.
+    @discardableResult
+    func applyBatch(_ batch: ScheduleChangeBatch) async -> BatchApplyResult {
         isLoading = true
         errorMessage = nil
+        var result = BatchApplyResult()
 
+        let applied: (toSave: [TimeBlock], toDelete: [TimeBlock])
         do {
-            let (toSave, toDelete) = batch.applyAll()
-
-            for block in toDelete {
-                try await repository.delete(block)
-            }
-
-            // Remove existing blocks that overlap with new ones
-            let validToSave = toSave.filter { $0.isValid }
-            if !validToSave.isEmpty {
-                try await repository.removeOverlapping(with: validToSave)
-                let _ = try await repository.saveAll(validToSave)
-            }
-
-            // Reload from repository for the current view range
-            await loadBlocks()
-
-            // Remove from pending
-            pendingBatches.removeAll { $0.id == batch.id }
+            applied = batch.applyAll()
         } catch {
-            print("[CalendarVM] applyBatch error: \(error.localizedDescription)")
+            result.fatalError = error
             errorMessage = error.localizedDescription
+            await logActivityEntry(for: batch, result: result)
+            isLoading = false
+            return result
         }
 
-        // Always log — even if some saves failed, changes may have been partially applied
-        await logActivityEntry(for: batch)
+        // Delete one-by-one so individual failures don't block the rest
+        for block in applied.toDelete {
+            do {
+                try await repository.delete(block)
+                result.deletedBlocks.append(block)
+            } catch {
+                print("[CalendarVM] delete failed for \(block.id): \(error.localizedDescription)")
+                result.failedDeletes.append(block)
+            }
+        }
+
+        // Remove overlapping blocks, then save
+        let validToSave = applied.toSave.filter { $0.isValid }
+        if !validToSave.isEmpty {
+            do {
+                try await repository.removeOverlapping(with: validToSave)
+            } catch {
+                print("[CalendarVM] removeOverlapping failed: \(error.localizedDescription)")
+                // Continue — saves may still work
+            }
+
+            do {
+                let saved = try await repository.saveAll(validToSave)
+                let savedIDs = Set(saved.map(\.id))
+                for block in validToSave {
+                    if savedIDs.contains(block.id) {
+                        result.savedBlocks.append(block)
+                    } else {
+                        result.failedSaves.append(block)
+                    }
+                }
+            } catch {
+                print("[CalendarVM] saveAll failed: \(error.localizedDescription)")
+                result.failedSaves.append(contentsOf: validToSave)
+            }
+        }
+
+        // Always reload, clean up pending, and log
+        await loadBlocks()
+        pendingBatches.removeAll { $0.id == batch.id }
+        await logActivityEntry(for: batch, result: result)
+
+        if !result.isFullSuccess {
+            errorMessage = result.isTotalFailure
+                ? "None of the changes could be applied."
+                : "Some changes could not be applied."
+        }
 
         isLoading = false
+        return result
     }
 
     /// Log an activity journal entry after a batch is applied.
-    private func logActivityEntry(for batch: ScheduleChangeBatch) async {
+    private func logActivityEntry(for batch: ScheduleChangeBatch, result: BatchApplyResult) async {
         guard let user = UserProfileManager.shared.currentUser else {
             print("[CalendarVM] logActivityEntry skipped — no currentUser")
             return
         }
 
         let breakdown = Self.buildChangeBreakdown(batch)
-        let detailedBreakdown = Self.buildDetailedChangeBreakdown(batch)
+        var detailedBreakdown = Self.buildDetailedChangeBreakdown(batch)
+
+        // Append failure note if not fully successful
+        if !result.isFullSuccess {
+            let failNote = "\n\n--- Partial failure ---\n\(result.totalSucceeded) succeeded, \(result.totalFailed) failed"
+            detailedBreakdown = (detailedBreakdown ?? "") + failNote
+        }
+
+        let actualApplied = result.totalSucceeded
 
         let metadata = await aiService.generateActivityMetadata(
             narration: batch.originalCommand,
             summary: batch.summary,
-            changeCount: batch.changeCount,
+            changeCount: actualApplied,
             userName: user.displayName,
             userRole: user.role.displayName,
             changeBreakdown: breakdown
@@ -360,7 +403,7 @@ final class CalendarViewModel {
             changeDescription: metadata.notificationMessage,
             userNarration: batch.originalCommand,
             notificationMessage: metadata.notificationMessage,
-            changesApplied: batch.changeCount,
+            changesApplied: actualApplied,
             title: metadata.title,
             purpose: metadata.purpose,
             datesImpacted: metadata.datesImpacted,

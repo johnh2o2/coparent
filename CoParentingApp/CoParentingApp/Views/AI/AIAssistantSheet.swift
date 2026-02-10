@@ -10,11 +10,12 @@ struct AIAssistantSheet: View {
     @State private var sheetState: SheetState = .input
     @State private var pendingBatch: ScheduleChangeBatch?
     @State private var errorText: String?
+    @State private var applyResult: BatchApplyResult?
 
     let calendarViewModel: CalendarViewModel
 
     enum SheetState {
-        case input, processing, review, applying, done, error
+        case input, processing, review, applying, done, partialSuccess, error
     }
 
     var body: some View {
@@ -31,6 +32,8 @@ struct AIAssistantSheet: View {
                     applyingView
                 case .done:
                     doneView
+                case .partialSuccess:
+                    partialSuccessView
                 case .error:
                     errorView
                 }
@@ -39,7 +42,7 @@ struct AIAssistantSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    if sheetState == .input || sheetState == .error {
+                    if sheetState == .input || sheetState == .error || sheetState == .partialSuccess {
                         Button("Cancel") {
                             dismiss()
                         }
@@ -47,7 +50,7 @@ struct AIAssistantSheet: View {
                 }
             }
         }
-        .interactiveDismissDisabled(sheetState != .input && sheetState != .error)
+        .interactiveDismissDisabled(sheetState != .input && sheetState != .error && sheetState != .partialSuccess)
     }
 
     // MARK: - Input View
@@ -318,11 +321,11 @@ struct AIAssistantSheet: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 48))
-                .foregroundStyle(.orange)
+                .foregroundStyle(.red)
 
-            Text("Something went wrong")
+            Text("Changes Could Not Be Applied")
                 .font(.title3)
                 .fontWeight(.medium)
 
@@ -335,22 +338,153 @@ struct AIAssistantSheet: View {
 
             Spacer()
 
-            Button {
-                sheetState = .input
-                errorText = nil
-            } label: {
-                HStack {
-                    Image(systemName: "arrow.counterclockwise")
-                    Text("Try Again")
+            VStack(spacing: 12) {
+                Button {
+                    sheetState = .input
+                    errorText = nil
+                    applyResult = nil
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.counterclockwise")
+                        Text("Try Again")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.accentColor)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.accentColor)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Dismiss")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .foregroundStyle(.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
             }
             .padding(.horizontal)
             .padding(.bottom)
+        }
+    }
+
+    // MARK: - Partial Success View
+
+    private var partialSuccessView: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Header
+                VStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.orange)
+
+                    Text("Partially Applied")
+                        .font(.title3)
+                        .fontWeight(.medium)
+
+                    Text("Some changes were applied, but not all of them succeeded.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
+                .padding(.top)
+
+                if let result = applyResult {
+                    // Green card — successes
+                    if result.totalSucceeded > 0 {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("\(result.totalSucceeded) change\(result.totalSucceeded == 1 ? "" : "s") applied", systemImage: "checkmark.circle.fill")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.green)
+
+                            Text(result.successSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Color.green.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal)
+                    }
+
+                    // Red card — failures
+                    if result.totalFailed > 0 {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("\(result.totalFailed) change\(result.totalFailed == 1 ? "" : "s") failed", systemImage: "xmark.circle.fill")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.red)
+
+                            Text(result.failureSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Color.red.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal)
+                    }
+                }
+
+                // Guidance card
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("What to do next", systemImage: "lightbulb")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+
+                    Text("Please review your schedule to make sure it looks right. You can make further changes with the AI assistant or edit blocks directly.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal)
+
+                // Buttons
+                VStack(spacing: 12) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Image(systemName: "calendar")
+                            Text("Review Schedule")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.accentColor)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    Button {
+                        sheetState = .input
+                        errorText = nil
+                        applyResult = nil
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.counterclockwise")
+                            Text("Try Again")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .foregroundStyle(.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.bottom)
+            }
         }
     }
 
@@ -405,19 +539,10 @@ struct AIAssistantSheet: View {
         sheetState = .applying
 
         Task {
-            await calendarViewModel.applyBatch(batch)
+            let result = await calendarViewModel.applyBatch(batch)
+            applyResult = result
 
-            if let error = calendarViewModel.errorMessage {
-                errorText = error
-                sheetState = .error
-                AIInteractionLog.shared.log(
-                    command: batch.originalCommand,
-                    summary: batch.summary,
-                    changeCount: batch.changeCount,
-                    wasApplied: false,
-                    errorMessage: error
-                )
-            } else {
+            if result.isFullSuccess {
                 AIInteractionLog.shared.log(
                     command: batch.originalCommand,
                     summary: batch.summary,
@@ -429,6 +554,27 @@ struct AIAssistantSheet: View {
                 // Auto-dismiss after 1.5 seconds
                 try? await Task.sleep(for: .seconds(1.5))
                 dismiss()
+            } else if result.isPartialSuccess {
+                AIInteractionLog.shared.log(
+                    command: batch.originalCommand,
+                    summary: batch.summary,
+                    changeCount: result.totalSucceeded,
+                    wasApplied: true,
+                    errorMessage: "Partial failure: \(result.failureSummary)"
+                )
+                Haptics.warning()
+                sheetState = .partialSuccess
+            } else {
+                // Total failure
+                errorText = calendarViewModel.errorMessage ?? "None of the changes could be applied."
+                AIInteractionLog.shared.log(
+                    command: batch.originalCommand,
+                    summary: batch.summary,
+                    changeCount: 0,
+                    wasApplied: false,
+                    errorMessage: errorText
+                )
+                sheetState = .error
             }
         }
     }

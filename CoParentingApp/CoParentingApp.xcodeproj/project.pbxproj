@@ -42,6 +42,7 @@
 		A10000010000000000000032 /* KVKCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = A30000010000000000000001 /* KVKCalendar */; };
 		A10000010000000000000033 /* SwiftAnthropic in Frameworks */ = {isa = PBXBuildFile; productRef = A30000010000000000000002 /* SwiftAnthropic */; };
 		A10000010000000000000034 /* ScheduleChangeBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000034 /* ScheduleChangeBatch.swift */; };
+		A10000010000000000000048 /* BatchApplyResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000048 /* BatchApplyResult.swift */; };
 		A10000010000000000000035 /* APIUsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000035 /* APIUsageTracker.swift */; };
 		A10000010000000000000036 /* AIInteractionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000036 /* AIInteractionLog.swift */; };
 		A10000010000000000000037 /* AIHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000037 /* AIHistoryView.swift */; };
@@ -94,6 +95,7 @@
 		A20000010000000000000032 /* CoParentingApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CoParentingApp.entitlements; sourceTree = "<group>"; };
 		A20000010000000000000033 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000010000000000000034 /* ScheduleChangeBatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleChangeBatch.swift; sourceTree = "<group>"; };
+		A20000010000000000000048 /* BatchApplyResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchApplyResult.swift; sourceTree = "<group>"; };
 		A20000010000000000000035 /* APIUsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIUsageTracker.swift; sourceTree = "<group>"; };
 		A20000010000000000000036 /* AIInteractionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIInteractionLog.swift; sourceTree = "<group>"; };
 		A20000010000000000000037 /* AIHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIHistoryView.swift; sourceTree = "<group>"; };
@@ -183,6 +185,7 @@
 				A20000010000000000000009 /* CareLogSummary.swift */,
 				A20000010000000000000010 /* ScheduleChange.swift */,
 				A20000010000000000000034 /* ScheduleChangeBatch.swift */,
+				A20000010000000000000048 /* BatchApplyResult.swift */,
 				A20000010000000000000038 /* ScheduleChangeEntry.swift */,
 			);
 			path = Models;
@@ -432,6 +435,7 @@
 				A10000010000000000000009 /* CareLogSummary.swift in Sources */,
 				A10000010000000000000010 /* ScheduleChange.swift in Sources */,
 				A10000010000000000000034 /* ScheduleChangeBatch.swift in Sources */,
+				A10000010000000000000048 /* BatchApplyResult.swift in Sources */,
 				A10000010000000000000011 /* SlotUtility.swift in Sources */,
 				A10000010000000000000012 /* KVKCalendarWrapper.swift in Sources */,
 				A10000010000000000000013 /* CloudKitService.swift in Sources */,
@@ -600,7 +604,7 @@
 				CODE_SIGN_ENTITLEMENTS = CoParentingApp/Resources/CoParentingApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 27;
 				DEVELOPMENT_TEAM = DMG3FT2G47;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -636,7 +640,7 @@
 				CODE_SIGN_ENTITLEMENTS = CoParentingApp/Resources/CoParentingApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 27;
 				DEVELOPMENT_TEAM = DMG3FT2G47;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
