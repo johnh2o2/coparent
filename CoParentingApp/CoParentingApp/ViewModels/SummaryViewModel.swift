@@ -240,6 +240,36 @@ final class SummaryViewModel {
 // MARK: - Chart Data
 
 extension SummaryViewModel {
+    /// Hours in a single care day based on the configured care window
+    var careWindowHoursPerDay: Double {
+        Double(SlotUtility.careWindowEnd - SlotUtility.careWindowStart) * 0.25 // 15-min slots
+    }
+
+    /// Balance between parentA and parentB, expressed as care-days + hours
+    var careBalance: CareBalance? {
+        guard let summary else { return nil }
+        let hoursA = summary.hoursByProvider[.parentA] ?? 0
+        let hoursB = summary.hoursByProvider[.parentB] ?? 0
+        let diff = abs(hoursA - hoursB)
+        guard diff > 0 else { return nil }
+
+        let hpd = careWindowHoursPerDay
+        let fullDays = hpd > 0 ? Int(diff / hpd) : 0
+        let remainingHours = hpd > 0 ? diff.truncatingRemainder(dividingBy: hpd) : diff
+
+        let ahead: CareProvider = hoursA >= hoursB ? .parentA : .parentB
+        let behind: CareProvider = hoursA >= hoursB ? .parentB : .parentA
+
+        return CareBalance(
+            ahead: ahead,
+            behind: behind,
+            differenceHours: diff,
+            fullDays: fullDays,
+            remainingHours: remainingHours,
+            careWindowHoursPerDay: hpd
+        )
+    }
+
     /// Data for pie chart
     var pieChartData: [(provider: CareProvider, hours: Double, color: Color)] {
         providerStats.map { stat in

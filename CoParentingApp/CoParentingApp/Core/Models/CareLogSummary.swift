@@ -112,6 +112,29 @@ extension CareLogSummary {
     }
 }
 
+// MARK: - Care Balance
+
+/// Represents the difference between two caregivers in actionable terms
+struct CareBalance {
+    let ahead: CareProvider
+    let behind: CareProvider
+    let differenceHours: Double
+    let fullDays: Int
+    let remainingHours: Double
+    let careWindowHoursPerDay: Double
+
+    /// e.g. "3 days, 2.5 hrs"
+    var formattedDifference: String {
+        if fullDays > 0 && remainingHours >= 0.25 {
+            return "\(fullDays) day\(fullDays == 1 ? "" : "s"), \(String(format: "%.1f", remainingHours)) hrs"
+        } else if fullDays > 0 {
+            return "\(fullDays) care-day\(fullDays == 1 ? "" : "s")"
+        } else {
+            return String(format: "%.1f hrs", differenceHours)
+        }
+    }
+}
+
 // MARK: - Sample Data
 
 extension CareLogSummary {

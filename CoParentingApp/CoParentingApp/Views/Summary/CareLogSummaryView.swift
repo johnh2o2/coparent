@@ -39,6 +39,11 @@ struct CareLogSummaryView: View {
                         // Provider breakdown
                         ProviderBreakdownSection(stats: viewModel.providerStats)
 
+                        // Care balance
+                        if let balance = viewModel.careBalance {
+                            CareBalanceSection(balance: balance)
+                        }
+
                         // Daily bar chart
                         if !viewModel.dailyBreakdown.isEmpty {
                             DailyBarChart(data: viewModel.barChartData)
@@ -288,6 +293,59 @@ struct ProviderStatRow: View {
             }
             .frame(height: 8)
         }
+    }
+}
+
+/// Care balance section showing difference and equalization info
+struct CareBalanceSection: View {
+    let balance: CareBalance
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Balance")
+                .font(.headline)
+
+            HStack(spacing: 0) {
+                Circle()
+                    .fill(balance.ahead.color)
+                    .frame(width: 12, height: 12)
+                Text(" \(balance.ahead.displayName)")
+                    .fontWeight(.medium)
+                Text(" has ")
+                    .foregroundStyle(.secondary)
+                Text(String(format: "%.1f", balance.differenceHours))
+                    .fontWeight(.semibold)
+                Text(" more hours")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.subheadline)
+
+            // The key info: how many care-days to equalize
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .foregroundStyle(.orange)
+                    Text("To equalize:")
+                        .fontWeight(.medium)
+                }
+                .font(.subheadline)
+
+                Text("\(balance.behind.displayName) needs **\(balance.formattedDifference)** more coverage")
+                    .font(.subheadline)
+
+                Text("Based on \(String(format: "%.1f", balance.careWindowHoursPerDay))h care-day")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.orange.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .padding()
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
 }
 
