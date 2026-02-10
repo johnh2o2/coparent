@@ -217,12 +217,12 @@ struct CalendarView: View {
         case .day:
             formatter.dateFormat = "EEE, MMM d"
         case .week:
-            formatter.dateFormat = "MMM d"
+            formatter.dateFormat = "EEE, MMM d"
             let daysInView = horizontalSizeClass == .regular ? 6 : 2
             let endDate = Calendar.current.date(byAdding: .day, value: daysInView, to: viewModel.selectedDate)!
             let endFormatter = DateFormatter()
-            endFormatter.dateFormat = "d"
-            return "\(formatter.string(from: viewModel.selectedDate)) - \(endFormatter.string(from: endDate))"
+            endFormatter.dateFormat = "EEE, MMM d"
+            return "\(formatter.string(from: viewModel.selectedDate)) – \(endFormatter.string(from: endDate))"
         case .month:
             formatter.dateFormat = "MMMM yyyy"
         default:

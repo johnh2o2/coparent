@@ -126,8 +126,23 @@ final class AIScheduleService {
         userRole: String? = nil,
         changeBreakdown: String? = nil
     ) async -> ActivityMetadata {
+        // Build a meaningful fallback title from the user's narration
+        let fallbackTitle: String
+        let trimmedNarration = narration.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedNarration.isEmpty {
+            fallbackTitle = "\(userName) updated the schedule"
+        } else {
+            // Capitalize first letter and truncate to keep it concise
+            let capitalized = trimmedNarration.prefix(1).uppercased() + trimmedNarration.dropFirst()
+            if capitalized.count <= 60 {
+                fallbackTitle = capitalized
+            } else {
+                fallbackTitle = String(capitalized.prefix(57)) + "..."
+            }
+        }
+
         let fallback = ActivityMetadata(
-            title: "\(userName) updated the schedule",
+            title: fallbackTitle,
             purpose: nil,
             datesImpacted: "Today",
             careTimeDelta: nil,

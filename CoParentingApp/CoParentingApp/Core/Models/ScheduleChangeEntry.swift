@@ -19,6 +19,7 @@ struct ScheduleChangeEntry: Identifiable, Codable {
     let datesImpacted: String     // Summary of dates affected
     let careTimeDelta: String?    // e.g. "+12.5h to your year"
     let rawAISummary: String?     // Full batch.summary for raw view
+    let changeBreakdown: String?  // Per-change detail list for drill-down
 
     init(
         id: UUID = UUID(),
@@ -34,7 +35,8 @@ struct ScheduleChangeEntry: Identifiable, Codable {
         purpose: String? = nil,
         datesImpacted: String? = nil,
         careTimeDelta: String? = nil,
-        rawAISummary: String? = nil
+        rawAISummary: String? = nil,
+        changeBreakdown: String? = nil
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -50,6 +52,7 @@ struct ScheduleChangeEntry: Identifiable, Codable {
         self.datesImpacted = datesImpacted ?? "Today"
         self.careTimeDelta = careTimeDelta
         self.rawAISummary = rawAISummary
+        self.changeBreakdown = changeBreakdown
     }
 
     /// The CareProvider associated with this entry's user role
@@ -67,7 +70,7 @@ extension ScheduleChangeEntry {
         case id, timestamp, userID, userName, userRole
         case changeDescription, userNarration, notificationMessage
         case changesApplied
-        case title, purpose, datesImpacted, careTimeDelta, rawAISummary
+        case title, purpose, datesImpacted, careTimeDelta, rawAISummary, changeBreakdown
     }
 
     init?(from record: CKRecord) {
@@ -100,6 +103,7 @@ extension ScheduleChangeEntry {
         self.datesImpacted = (record[CloudKitKeys.datesImpacted.rawValue] as? String) ?? "Today"
         self.careTimeDelta = record[CloudKitKeys.careTimeDelta.rawValue] as? String
         self.rawAISummary = record[CloudKitKeys.rawAISummary.rawValue] as? String
+        self.changeBreakdown = record[CloudKitKeys.changeBreakdown.rawValue] as? String
     }
 
     func toRecord(recordID: CKRecord.ID? = nil) -> CKRecord {
@@ -124,6 +128,7 @@ extension ScheduleChangeEntry {
         record[CloudKitKeys.datesImpacted.rawValue] = datesImpacted
         record[CloudKitKeys.careTimeDelta.rawValue] = careTimeDelta
         record[CloudKitKeys.rawAISummary.rawValue] = rawAISummary
+        record[CloudKitKeys.changeBreakdown.rawValue] = changeBreakdown
 
         return record
     }

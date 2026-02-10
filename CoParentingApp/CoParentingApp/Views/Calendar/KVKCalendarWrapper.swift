@@ -256,9 +256,9 @@ class KVKCalendarViewController: UIViewController {
         style.timeSystem = .twelve
 
         // Timeline settings (15-minute granularity)
-        // Start earlier to accommodate early-morning care blocks
-        style.timeline.startHour = 5
-        style.timeline.endHour = 22
+        // Full 24-hour day so the user can scroll to any time
+        style.timeline.startHour = 0
+        style.timeline.endHour = 24
         style.timeline.widthTime = 60
         // Taller rows make it easier to read and tap/drag events
         style.timeline.heightTime = 80

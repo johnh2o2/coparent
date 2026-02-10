@@ -111,6 +111,29 @@ def add_build_to_group(token, group_id, build_id):
     api_post(token, url, data)
 
 
+def submit_for_beta_review(token, build_id):
+    """Submit a build for beta app review (required for external testing)."""
+    url = "https://api.appstoreconnect.apple.com/v1/betaAppReviewSubmissions"
+    data = {
+        "data": {
+            "type": "betaAppReviewSubmissions",
+            "relationships": {
+                "build": {
+                    "data": {"type": "builds", "id": build_id}
+                }
+            }
+        }
+    }
+    try:
+        api_post(token, url, data)
+    except urllib.error.HTTPError as e:
+        # 409 = already submitted/approved, which is fine
+        if e.code == 409:
+            print("  (Already submitted or approved)")
+        else:
+            raise
+
+
 def main():
     parser = argparse.ArgumentParser(description="Distribute build to TestFlight group")
     parser.add_argument("--build-number", help="Specific build number (default: latest)")
@@ -147,6 +170,9 @@ def main():
         else:
             print("ERROR: Build still processing after 10 minutes")
             sys.exit(1)
+
+    print(f"Submitting build {version} for beta review...")
+    submit_for_beta_review(token, build_id)
 
     print(f"Adding build {version} to '{BETA_GROUP_NAME}' group...")
     add_build_to_group(token, group_id, build_id)

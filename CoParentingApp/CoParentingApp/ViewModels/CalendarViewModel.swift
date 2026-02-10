@@ -339,6 +339,8 @@ final class CalendarViewModel {
 
         // Build a structured breakdown of changes for better metadata
         let breakdown = Self.buildChangeBreakdown(batch)
+        // Build the full per-change detail list for drill-down display
+        let detailedBreakdown = Self.buildDetailedChangeBreakdown(batch)
 
         // Generate all metadata in a single AI call
         let metadata = await aiService.generateActivityMetadata(
@@ -362,7 +364,8 @@ final class CalendarViewModel {
             purpose: metadata.purpose,
             datesImpacted: metadata.datesImpacted,
             careTimeDelta: metadata.careTimeDelta,
-            rawAISummary: batch.summary
+            rawAISummary: batch.summary,
+            changeBreakdown: detailedBreakdown
         )
 
         await ScheduleChangeRepository.shared.save(entry)
@@ -435,6 +438,53 @@ final class CalendarViewModel {
         }
         if !modifications.isEmpty {
             lines.append("Modified: " + modifications.joined(separator: "; "))
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    /// Build a full per-change breakdown with no summarization — used for drill-down display.
+    /// Each line is prefixed with a type marker: + (add), - (remove), ~ (modify), ⇄ (swap).
+    static func buildDetailedChangeBreakdown(_ batch: ScheduleChangeBatch) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE, MMM d"
+
+        var lines: [String] = []
+
+        for change in batch.changes {
+            switch change.changeType {
+            case .addBlock:
+                if let block = change.proposedBlock {
+                    let time = SlotUtility.formatSlotRange(start: block.startSlot, end: block.endSlot)
+                    let day = formatter.string(from: block.date)
+                    let recur = block.recurrenceType != .none ? " (recurring)" : ""
+                    lines.append("+ \(block.provider.displayName): \(day) \(time)\(recur)")
+                }
+            case .removeBlock:
+                if let block = change.originalBlock {
+                    let time = SlotUtility.formatSlotRange(start: block.startSlot, end: block.endSlot)
+                    let day = formatter.string(from: block.date)
+                    let recur = block.recurrenceType != .none ? " (recurring)" : ""
+                    lines.append("- \(block.provider.displayName): \(day) \(time)\(recur)")
+                }
+            case .changeTime:
+                if let orig = change.originalBlock, let prop = change.proposedBlock {
+                    let oldTime = SlotUtility.formatSlotRange(start: orig.startSlot, end: orig.endSlot)
+                    let newTime = SlotUtility.formatSlotRange(start: prop.startSlot, end: prop.endSlot)
+                    let day = formatter.string(from: prop.date)
+                    lines.append("~ \(orig.provider.displayName): \(oldTime) → \(newTime) on \(day)")
+                }
+            case .swap:
+                if let orig = change.originalBlock, let sec = change.secondaryOriginalBlock {
+                    lines.append("⇄ \(formatter.string(from: orig.date)) (\(orig.provider.displayName)) ↔ \(formatter.string(from: sec.date)) (\(sec.provider.displayName))")
+                }
+            case .reassign:
+                if let orig = change.originalBlock, let prop = change.proposedBlock {
+                    let day = formatter.string(from: orig.date)
+                    let time = SlotUtility.formatSlotRange(start: orig.startSlot, end: orig.endSlot)
+                    lines.append("~ \(day) \(time): \(orig.provider.displayName) → \(prop.provider.displayName)")
+                }
+            }
         }
 
         return lines.joined(separator: "\n")

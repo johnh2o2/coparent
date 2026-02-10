@@ -3,12 +3,16 @@ import SwiftUI
 /// Detail view for a single activity journal entry.
 struct ActivityDetailView: View {
     let entry: ScheduleChangeEntry
+    @State private var showChanges = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Header
                 headerSection
+
+                // Schedule changes (expandable)
+                changesSection
 
                 // Purpose (if present)
                 if let purpose = entry.purpose, !purpose.isEmpty {
@@ -84,16 +88,117 @@ struct ActivityDetailView: View {
 
                 Spacer()
 
-                // Changes count
-                Text("\(entry.changesApplied) change\(entry.changesApplied == 1 ? "" : "s")")
+                // Changes count — taps toggle the detail section
+                Button {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        showChanges.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("\(entry.changesApplied) change\(entry.changesApplied == 1 ? "" : "s")")
+                        Image(systemName: showChanges ? "chevron.up" : "chevron.down")
+                            .font(.caption2)
+                    }
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.accentColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Color(.systemGray5))
+                    .background(Color.accentColor.opacity(0.12))
                     .clipShape(Capsule())
+                }
             }
+        }
+    }
+
+    // MARK: - Changes Detail
+
+    private var changesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Tappable header
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    showChanges.toggle()
+                }
+            } label: {
+                HStack {
+                    Label("Schedule Changes", systemImage: "list.bullet.indent")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Image(systemName: showChanges ? "chevron.up" : "chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .buttonStyle(.plain)
+
+            if showChanges {
+                if let breakdown = entry.changeBreakdown, !breakdown.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(Array(breakdown.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
+                            changeRow(line)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                } else {
+                    Text("\(entry.changesApplied) schedule change\(entry.changesApplied == 1 ? "" : "s") (details not available for older entries)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+        }
+    }
+
+    private func changeRow(_ line: String) -> some View {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        let icon: String
+        let color: Color
+
+        if trimmed.hasPrefix("+") {
+            icon = "plus.circle.fill"
+            color = .green
+        } else if trimmed.hasPrefix("-") {
+            icon = "minus.circle.fill"
+            color = .red
+        } else if trimmed.hasPrefix("~") {
+            icon = "arrow.triangle.2.circlepath"
+            color = .orange
+        } else if trimmed.hasPrefix("⇄") {
+            icon = "arrow.left.arrow.right"
+            color = .blue
+        } else {
+            icon = "circle.fill"
+            color = .secondary
+        }
+
+        // Strip the prefix marker for display
+        let displayText: String
+        if trimmed.count > 2 && (trimmed.hasPrefix("+ ") || trimmed.hasPrefix("- ") || trimmed.hasPrefix("~ ") || trimmed.hasPrefix("⇄ ")) {
+            displayText = String(trimmed.dropFirst(2))
+        } else {
+            displayText = trimmed
+        }
+
+        return HStack(alignment: .top, spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(color)
+                .frame(width: 14)
+                .padding(.top, 2)
+            Text(displayText)
+                .font(.caption)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -195,7 +300,8 @@ struct ActivityDetailView: View {
             purpose: "Establishing a recurring weekly pattern for consistent childcare coverage",
             datesImpacted: "Mon-Fri recurring, starting Feb 10",
             careTimeDelta: "+487h to your year",
-            rawAISummary: "I've set up a recurring weekly schedule..."
+            rawAISummary: "I've set up a recurring weekly schedule...",
+            changeBreakdown: "- John: Mon, Feb 10 8:00 AM - 5:00 PM (recurring)\n- Sarah: Mon, Feb 10 8:00 AM - 5:00 PM (recurring)\n+ John: Mon, Feb 10 7:00 AM - 12:00 PM (recurring)\n+ John: Wed, Feb 12 7:00 AM - 12:00 PM (recurring)\n+ John: Fri, Feb 14 7:00 AM - 12:00 PM (recurring)\n+ Sarah: Tue, Feb 11 7:00 AM - 7:30 PM (recurring)\n+ Sarah: Thu, Feb 13 7:00 AM - 7:30 PM (recurring)"
         ))
     }
 }
