@@ -35,28 +35,6 @@ final class ScheduleChangeRepository {
         }
     }
 
-    // MARK: - Update
-
-    /// Replace an existing entry by ID (used to enrich a basic entry with AI metadata).
-    func update(_ entry: ScheduleChangeEntry) async {
-        if let index = entries.firstIndex(where: { $0.id == entry.id }) {
-            entries[index] = entry
-        } else {
-            // Entry may have been evicted by a CloudKit fetch — re-insert
-            entries.insert(entry, at: 0)
-        }
-        saveLocalCache()
-
-        guard cloudKit.isAuthenticated else { return }
-
-        do {
-            let record = entry.toRecord()
-            _ = try await cloudKit.save(record)
-        } catch {
-            print("[ScheduleChangeRepository] CloudKit update failed: \(error.localizedDescription)")
-        }
-    }
-
     // MARK: - Fetch
 
     func fetchEntries(limit: Int = 50) async -> [ScheduleChangeEntry] {
