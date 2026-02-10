@@ -323,26 +323,51 @@ final class CalendarViewModel {
 
             // Remove from pending
             pendingBatches.removeAll { $0.id == batch.id }
-
-            // Log to activity journal
-            await logActivityEntry(for: batch)
         } catch {
             errorMessage = error.localizedDescription
         }
+
+        // Always log — even if some saves failed, changes may have been partially applied
+        await logActivityEntry(for: batch)
 
         isLoading = false
     }
 
     /// Log an activity journal entry after a batch is applied.
     private func logActivityEntry(for batch: ScheduleChangeBatch) async {
-        guard let user = UserProfileManager.shared.currentUser else { return }
+        guard let user = UserProfileManager.shared.currentUser else {
+            print("[CalendarVM] logActivityEntry skipped — no currentUser")
+            return
+        }
 
-        // Build a structured breakdown of changes for better metadata
-        let breakdown = Self.buildChangeBreakdown(batch)
-        // Build the full per-change detail list for drill-down display
         let detailedBreakdown = Self.buildDetailedChangeBreakdown(batch)
 
-        // Generate all metadata in a single AI call
+        // Save a basic entry immediately so it's never lost
+        let entryID = UUID()
+        let narrationTitle: String = {
+            let trimmed = batch.originalCommand.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty { return "\(user.displayName) updated the schedule" }
+            let cap = trimmed.prefix(1).uppercased() + trimmed.dropFirst()
+            return cap.count <= 60 ? cap : String(cap.prefix(57)) + "..."
+        }()
+
+        let basicEntry = ScheduleChangeEntry(
+            id: entryID,
+            userID: user.id,
+            userName: user.displayName,
+            userRole: user.asCareProvider.rawValue,
+            changeDescription: narrationTitle,
+            userNarration: batch.originalCommand,
+            notificationMessage: "\(user.displayName) made \(batch.changeCount) schedule change\(batch.changeCount == 1 ? "" : "s").",
+            changesApplied: batch.changeCount,
+            title: narrationTitle,
+            rawAISummary: batch.summary,
+            changeBreakdown: detailedBreakdown
+        )
+        await ScheduleChangeRepository.shared.save(basicEntry)
+
+        // Now enrich with AI-generated metadata (best-effort)
+        let breakdown = Self.buildChangeBreakdown(batch)
         let metadata = await aiService.generateActivityMetadata(
             narration: batch.originalCommand,
             summary: batch.summary,
@@ -352,7 +377,9 @@ final class CalendarViewModel {
             changeBreakdown: breakdown
         )
 
-        let entry = ScheduleChangeEntry(
+        let enrichedEntry = ScheduleChangeEntry(
+            id: entryID,
+            timestamp: basicEntry.timestamp,
             userID: user.id,
             userName: user.displayName,
             userRole: user.asCareProvider.rawValue,
@@ -367,8 +394,7 @@ final class CalendarViewModel {
             rawAISummary: batch.summary,
             changeBreakdown: detailedBreakdown
         )
-
-        await ScheduleChangeRepository.shared.save(entry)
+        await ScheduleChangeRepository.shared.update(enrichedEntry)
     }
 
     /// Build a concise, structured breakdown of changes in a batch for activity metadata.
