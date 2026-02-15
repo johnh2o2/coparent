@@ -320,6 +320,11 @@ final class SettingsViewModel {
         return lines.joined(separator: "\n")
     }
 
+    /// Run sharing-specific diagnostics (shared zones, shared blocks, share status)
+    func runSharingDiagnostics() async -> String {
+        return await cloudKit.runSharingDiagnostics()
+    }
+
     /// Save a test TimeBlock, fetch it back, query it, then delete it.
     /// Proves the full CloudKit round-trip works in the current environment.
     func runSaveTest() async -> String {

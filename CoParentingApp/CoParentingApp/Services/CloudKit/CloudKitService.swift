@@ -148,6 +148,107 @@ final class CloudKitService {
         }
     }
 
+    /// Comprehensive sharing diagnostics — one screenshot tells the whole story
+    func runSharingDiagnostics() async -> String {
+        var lines: [String] = []
+        lines.append("=== Sharing Diagnostics ===")
+        lines.append("")
+
+        // 1. iCloud account status
+        do {
+            let status = try await container.accountStatus()
+            let statusText: String
+            switch status {
+            case .available: statusText = "Available"
+            case .noAccount: statusText = "No Account"
+            case .restricted: statusText = "Restricted"
+            case .couldNotDetermine: statusText = "Could Not Determine"
+            case .temporarilyUnavailable: statusText = "Temporarily Unavailable"
+            @unknown default: statusText = "Unknown"
+            }
+            lines.append("iCloud Account: \(statusText)")
+        } catch {
+            lines.append("iCloud Account: ERROR — \(error.localizedDescription)")
+        }
+
+        // 2. Private zone health
+        let zoneHealth = await checkZoneHealth()
+        lines.append("Private Zone: \(zoneHealth)")
+
+        // 3. Private TimeBlock count
+        do {
+            let records = try await fetchRecords(recordType: "TimeBlock")
+            lines.append("Private TimeBlocks: \(records.count)")
+        } catch {
+            lines.append("Private TimeBlocks: ERROR — \(error.localizedDescription)")
+        }
+
+        // 4. Share existence — check for CKShare records in private zones
+        do {
+            let zones = try await privateDatabase.allRecordZones()
+            var shareInfo: [String] = []
+            for zone in zones {
+                do {
+                    let shareRecord = try await privateDatabase.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zone.zoneID))
+                    if let share = shareRecord as? CKShare {
+                        let participants = share.participants.map { p in
+                            let role = p.role == .owner ? "owner" : "participant"
+                            let acceptance: String
+                            switch p.acceptanceStatus {
+                            case .accepted: acceptance = "accepted"
+                            case .pending: acceptance = "pending"
+                            case .removed: acceptance = "removed"
+                            @unknown default: acceptance = "unknown"
+                            }
+                            return "\(role):\(acceptance)"
+                        }
+                        shareInfo.append("  Zone '\(zone.zoneID.zoneName)': share URL=\(share.url?.absoluteString ?? "nil"), participants=[\(participants.joined(separator: ", "))]")
+                    }
+                } catch {
+                    // No share in this zone — that's fine
+                }
+            }
+            if shareInfo.isEmpty {
+                lines.append("Shares (private): None found")
+            } else {
+                lines.append("Shares (private):")
+                lines.append(contentsOf: shareInfo)
+            }
+        } catch {
+            lines.append("Shares (private): ERROR — \(error.localizedDescription)")
+        }
+
+        lines.append("")
+
+        // 5. Shared database zones
+        do {
+            let sharedZones = try await sharedDatabase.allRecordZones()
+            if sharedZones.isEmpty {
+                lines.append("Shared Zones: None")
+            } else {
+                lines.append("Shared Zones: \(sharedZones.count)")
+                for zone in sharedZones {
+                    lines.append("  '\(zone.zoneID.zoneName)' owner=\(zone.zoneID.ownerName)")
+                }
+            }
+        } catch {
+            lines.append("Shared Zones: ERROR — \(error.localizedDescription)")
+        }
+
+        // 6. Shared TimeBlock count
+        do {
+            let sharedBlocks = try await fetchSharedRecords(recordType: "TimeBlock")
+            lines.append("Shared TimeBlocks: \(sharedBlocks.count)")
+        } catch {
+            lines.append("Shared TimeBlocks: ERROR — \(error.localizedDescription)")
+        }
+
+        lines.append("")
+        lines.append("Container: \(containerIdentifier)")
+
+        return lines.joined(separator: "\n")
+    }
+
     // MARK: - Generic CRUD Operations
 
     /// Save a record to CloudKit
@@ -407,13 +508,20 @@ final class CloudKitService {
 
     /// Fetch shared records
     func fetchSharedRecords(recordType: String) async throws -> [CKRecord] {
-        // Use creationDate instead of TRUEPREDICATE — CloudKit Production
-        // requires recordName to be Queryable for NSPredicate(value: true).
-        let query = CKQuery(recordType: recordType, predicate: NSPredicate(format: "creationDate > %@", Date.distantPast as NSDate))
+        return try await fetchSharedRecords(
+            recordType: recordType,
+            predicate: NSPredicate(format: "creationDate > %@", Date.distantPast as NSDate)
+        )
+    }
+
+    /// Fetch shared records with a custom predicate (e.g. date-range queries)
+    func fetchSharedRecords(recordType: String, predicate: NSPredicate) async throws -> [CKRecord] {
+        let query = CKQuery(recordType: recordType, predicate: predicate)
 
         var allRecords: [CKRecord] = []
 
         let zones = try await sharedDatabase.allRecordZones()
+        print("[CloudKitService] fetchSharedRecords: \(zones.count) shared zone(s)")
 
         for zone in zones {
             let (results, _) = try await sharedDatabase.records(matching: query, inZoneWith: zone.zoneID)
@@ -425,6 +533,7 @@ final class CloudKitService {
             }
         }
 
+        print("[CloudKitService] fetchSharedRecords(\(recordType)): \(allRecords.count) record(s)")
         return allRecords
     }
 

@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var showingProfileEditor = false
     @State private var diagnosticReport: String?
     @State private var saveTestReport: String?
+    @State private var sharingReport: String?
 
     var body: some View {
         NavigationStack {
@@ -305,6 +306,15 @@ struct SettingsView: View {
                         Label("Test Save→Fetch→Delete", systemImage: "checkmark.shield")
                     }
 
+                    Button {
+                        Task {
+                            sharingReport = "Running..."
+                            sharingReport = await viewModel.runSharingDiagnostics()
+                        }
+                    } label: {
+                        Label("Run Sharing Diagnostics", systemImage: "shared.with.you")
+                    }
+
                     if let report = diagnosticReport {
                         Text(report)
                             .font(.caption.monospaced())
@@ -316,6 +326,13 @@ struct SettingsView: View {
                         Text(report)
                             .font(.caption.monospaced())
                             .foregroundStyle(report.contains("FAILED") ? .red : .green)
+                            .textSelection(.enabled)
+                    }
+
+                    if let report = sharingReport {
+                        Text(report)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
                             .textSelection(.enabled)
                     }
                 } header: {

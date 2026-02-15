@@ -105,6 +105,31 @@ final class TimeBlockRepository {
                 }
             }
 
+            // Also fetch shared TimeBlocks (co-parent's data).
+            // Failures here must NOT block the private fetch results.
+            let privateCount = allRecords.count
+            do {
+                async let sharedDateRange = cloudKit.fetchSharedRecords(
+                    recordType: TimeBlock.recordType,
+                    predicate: dateRangePredicate
+                )
+                async let sharedRecurring = cloudKit.fetchSharedRecords(
+                    recordType: TimeBlock.recordType,
+                    predicate: recurringPredicate
+                )
+
+                for record in try await sharedDateRange + sharedRecurring {
+                    let id = record.recordID.recordName
+                    if seen.insert(id).inserted {
+                        allRecords.append(record)
+                    }
+                }
+                let sharedCount = allRecords.count - privateCount
+                print("[TimeBlockRepository] Shared fetch: \(sharedCount) shared record(s) merged")
+            } catch {
+                print("[TimeBlockRepository] Shared fetch failed (non-blocking): \(error.localizedDescription)")
+            }
+
             let blocks = allRecords.compactMap { record -> TimeBlock? in
                 guard let block = TimeBlock(from: record) else { return nil }
                 recordIDMapping[block.id] = record.recordID
